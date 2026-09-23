@@ -111,13 +111,16 @@ Arguments given: `$ARGUMENTS` (may be empty).
    `gitleaks git --redact` (older versions: `gitleaks detect --redact`) and
    judge it by the verdict rule. Otherwise take the patterns from the guard
    itself and write them to a temporary file outside the repo:
-   `sed -n "/<<'PATTERNS'/,/^PATTERNS/p" ${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-guard.sh | sed '1d;$d'`,
-   plus `.prove-it/patterns` if present, with comment and blank lines
-   stripped. Then list file names only for the working tree
-   (`git ls-files -z | xargs -0 grep -l -E -f <patterns>`) and a count of
-   matching lines only for history (`git log -p | grep -c -E -f <patterns>`).
-   Grep exit 1, or xargs exit 123, with no file names, and a history count of
-   0, mean clean. Never print the matched text.
+   `sed -n "/<<'PATTERNS'/,/^PATTERNS/p" ${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-guard.sh | sed '1d;$d'`.
+   If `.prove-it/patterns` exists, write its lines, with comment and blank
+   lines stripped, to a second temporary file: like the guard, those are
+   matched ignoring case (`grep -i`), and the built-ins are not. For each
+   pattern file, list file names only for the working tree
+   (`git ls-files -z | xargs -0 grep -l -E -f <patterns>`, adding `-i` for
+   the local file) and a count of matching lines only for history
+   (`git log -p | grep -c -E -f <patterns>`, `-i` likewise). Grep exit 1, or
+   xargs exit 123, with no file names, and history counts of 0, mean clean.
+   Never print the matched text.
 
 5. **Show the arithmetic.** Pass = 1; fail and unverified = 0, and
    unverified is shown as such. Dimension score = round(100 × passes ÷ 6),
