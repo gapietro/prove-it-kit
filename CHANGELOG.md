@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.1 — unreleased
+
+Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
+
+- `design-challenge` ends every turn with exactly one question, even when
+  asked for all of them at once (B6).
+- `design-challenge` reads every term back, numbered, and asks "Confirm these
+  N terms, or correct any." before writing; the record holds exactly the
+  confirmed list. Splits, merges and additions are proposed in the read-back,
+  never made silently. `amend` reads back added or changed terms the same way
+  (B7).
+- `grade` scores a fixed 18-criterion rubric, six per dimension, the same for
+  every project; per-term checks are `n of m` coverage inside
+  `design.terms-tested` and `design.gates-evidenced`. Caps are set by
+  criterion id, and `code.tests` unverified now caps at 49 (D7).
+- `grade` judges build, tests and lint only by the exit status of the plain
+  command, quoting the output as evidence; no visible status means
+  unverified (D8).
+- `grade` never runs `now-sdk auth --list`; it asks for the install alias by
+  name (D9).
+- `grade` remediation proposes one story per failed or unverified criterion,
+  at most 18, with per-term detail in the story body (D10).
+- `handoff` with no argument reads only its listed inputs, and never
+  `GRADE.md` or `BACKLOG.md` (E6).
+
 ## 0.1.0-rc.1 — 2026-09-23 (release candidate, private)
 
 First version. Tagged `v0.1.0-rc.1`. Not yet public: publishing waits for
