@@ -28,6 +28,17 @@ Run every mode from the app repo root (`git rev-parse --show-toplevel`).
 Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 `${CLAUDE_PLUGIN_ROOT}/templates/HANDOFF.md`. Read them each time.
 
+With no argument, the inputs are exactly:
+- the design records, `docs/DESIGN-*.md`;
+- `src/`;
+- `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
+  `${CLAUDE_PLUGIN_ROOT}/templates/HANDOFF.md`;
+- an existing `RUNBOOK.md`, if present;
+- `.gitignore`, which step 4 edits.
+
+Read nothing else — not GRADE.md, not BACKLOG.md. The other modes list their
+own inputs in their steps.
+
 ## Steps
 
 ### No argument: checks 1 and 2
@@ -170,6 +181,8 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 
 - Never soften a verdict. A failed or missing check means NOT READY and names
   the item.
+- With no argument, read only the inputs listed under Input. Read nothing
+  else — not GRADE.md, not BACKLOG.md.
 - Never write READY in a draft.
 - The drill card is written outside the repo. Never commit it.
 - Never plant, change or restore anything on an instance yourself.
