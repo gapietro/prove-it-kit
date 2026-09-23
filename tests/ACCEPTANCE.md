@@ -108,6 +108,7 @@ Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
 
 D1–D6 were written against 0.1.0's per-project criteria list. From 0.1.1, D7–D10 hold grade to the
 fixed rubric in the 0.1.1 design §2: the same 18 criteria for every project, per-term checks as coverage ratios.
+For D8: build, test and lint verdicts come from exit status per the verdict rule in the 0.1.1 design §3; exit 0 with a tool-reported error is unverified, never pass.
 
 | Date | Kit version | Criterion | Pass/Fail | Evidence |
 |---|---|---|---|---|
