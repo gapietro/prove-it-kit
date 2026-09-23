@@ -16,10 +16,10 @@ trap 'rm -rf "$tmp"' EXIT
 cat > "$tmp/builtin" <<'PATTERNS'
 -----BEGIN [A-Z ]*PRIVATE KEY-----
 (ghp|gho|ghs|ghu|ghr|github_pat)_[A-Za-z0-9_]{20,}
-(^|[^A-Za-z0-9_-])sk-(proj-)?[A-Za-z0-9_]{20,}
+(^|[^A-Za-z0-9_-])sk-((ant-api[0-9]+-|proj-|svcacct-|admin-)[A-Za-z0-9_-]{20,}|[A-Za-z0-9_]{20,})
 AKIA[0-9A-Z]{16}
 xox[abprs]-[A-Za-z0-9-]{10,}
-https?://[^/[:space:]:@]+:[^/[:space:]@]+@
+[a-z][a-z0-9+.-]*://[^/[:space:]:@]+:[^/[:space:]@]+@
 FAKE_TOKEN[=]do-not-use-
 PATTERNS
 

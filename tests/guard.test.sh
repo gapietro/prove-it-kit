@@ -65,6 +65,10 @@ expect_block "force-added outside allowlist"    notes.txt 'meeting notes' -f
 expect_block "API key shape is blocked"         src/app.js "$(printf 'const k = "sk\055abcdefghijklmnopqrstuvwx1234";')" '' \
   "$(printf 'sk\055abcdefghijklmnopqrstuvwx1234')"
 expect_block "secret on a line starting with ++"  src/app.txt "$(printf '++ FAKE\137TOKEN\075do-not-use-0000')"
+expect_block "Anthropic key shape is blocked"   src/app.js "$(printf 'const k = "sk\055ant\055api03\055AbCdEfGh\055IjKlMnOpQrStUvWx\137yz0123";')" '' \
+  "$(printf 'sk\055ant\055api03\055AbCdEfGh\055IjKlMnOpQrStUvWx\137yz0123')"
+expect_block "non-HTTP credential URL is blocked" src/app.js "$(printf 'db = "postgres\072//appuser\072s3cretpw@db.example.invalid/app"')" '' \
+  "$(printf 'appuser\072s3cretpw')"
 expect_pass  "kebab-case names pass"            src/app.css '.x { mask-image-linear-gradient: none; } /* risk-assessment-service-module */'
 expect_pass  "lowercase look-alikes pass"       src/app.js 'const s = "akiaabcdefghijklmnop";'
 
