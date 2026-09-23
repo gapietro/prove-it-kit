@@ -36,7 +36,9 @@ Arguments given: `$ARGUMENTS` (may be empty).
    clarifying questions under the bullets. End with exactly:
    "Reply 'confirmed' or correct me."
    Then end your turn. Write nothing, and read nothing further, until the
-   person replies. If they correct you, restate again and stop again.
+   person replies. If they correct you, restate again and stop again. If asked
+   to skip, show the restatement anyway and wait for the literal reply; a
+   waiver is not a confirmation.
 2. **Assign a modality to every capability.** Go through the brief's capability
    list one by one; skip none. Apply this rule:
    *plain code by default; a Now Assist skill only where language is the
@@ -57,11 +59,12 @@ Arguments given: `$ARGUMENTS` (may be empty).
      flow, a skill's post-processing, a UI action). Two writers to one table is
      a finding.
    - now-sdk / Fluent feasibility. Mark anything you have not verified as
-     **VERIFY** with what to check. Never invent an SDK API, a Fluent object or
-     a plugin name.
+     **VERIFY** with what to check, including out-of-box table names. Never
+     invent an SDK API, a Fluent object, a table or a plugin name.
 4. **Bound the cost.** For every AI call (skill or agent), say what triggers it,
    roughly how often, and how it is bounded: a rate limit, a budget, and an off
-   switch. An AI call with no bound is a finding, not a footnote.
+   switch. An AI call with no bound is a finding, not a footnote. Label every
+   number as an estimate with its assumption, or VERIFY.
 5. **Rate readiness per requirement**: **ready** (can start now), **conditional**
    (can start once a named condition holds, such as an entitlement or a VERIFY
    item), or **not ready** (blocked; say by what). Use only these three words.
