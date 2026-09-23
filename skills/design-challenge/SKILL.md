@@ -30,11 +30,14 @@ Arguments given: `$ARGUMENTS` (may be empty).
 ## Steps
 
 1. Read the consult file and the template. Ask the person for the feature name
-   (propose one from the consult and confirm it). The output is
-   `docs/DESIGN-<Feature>.md`, relative to the current directory.
-2. Ask the person for their design in their own words: what is built, which
-   tables, which code owns each write. Record it in §1 Summary and §4 Data and
-   ownership. Cite the consult in §2 Context by file name and date; never paste
+   (propose one from the consult and confirm it). The feature name uses only
+   letters, digits and `_ . -` (for example `IntakeTriage`), because it becomes
+   the file name and a key prefix. The output is `docs/DESIGN-<Feature>.md`,
+   relative to the current directory.
+2. Ask one open question, and wait: "Describe your design in your own words:
+   what is built, which tables it uses, and which code owns each write." Record
+   the answer in §1 Summary and §4 Data and ownership. Anything it leaves out
+   is asked later, one question per turn. Cite the consult in §2 Context by file name and date; never paste
    or link it.
 3. Challenge, **one question per turn**, in this order. Ask, stop, wait for the
    answer, record it, then ask the next. Keep going within a topic until its
@@ -44,8 +47,9 @@ Arguments given: `$ARGUMENTS` (may be empty).
    2. **Security and access** — roles, ACLs, the scope boundary, and what data
       leaves the instance (for example to an AI model). → §6.
    3. **Cost** — what each AI call costs, what bounds it (rate limit, budget,
-      off switch), and what happens when the bound is hit. → terms in §3 and
-      pass criteria in §7.
+      off switch), and what happens when the bound is hit. Label every number
+      as an estimate with its assumption, or VERIFY. → terms in §3 and pass
+      criteria in §7.
    4. **Boundaries** — what this feature will not do, and which options were
       considered and dropped. → terms in §3, and §8 Rejected alternatives,
       each with its reason.
