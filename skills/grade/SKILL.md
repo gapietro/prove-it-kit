@@ -1,6 +1,6 @@
 ---
 name: grade
-description: Use at a milestone of a now-sdk app repo to run the build, tests and lint (judged by exit status), score a fixed 18-criterion rubric (sound design, code quality, production readiness, six each) with the arithmetic shown, cap the score for release blockers, write GRADE.md at the repo root with a forecast, and propose one remediation epic as a plan.json filed only through file-plan.mjs.
+description: Use at a milestone of a now-sdk app repo to run the build, tests and lint (judged by exit status), score a fixed 18-criterion rubric (Design, Code quality, Readiness, six each) with the arithmetic shown, cap the score for release blockers, write GRADE.md at the repo root with a forecast, and propose one remediation epic as a plan.json filed only through file-plan.mjs.
 ---
 
 # grade
@@ -93,7 +93,7 @@ Arguments given: `$ARGUMENTS` (may be empty).
    | Code quality | `code.lint` | The `lint` script exits 0 (unverified if there is none) |
    | Code quality | `code.oob` | No out-of-box workflow, state or record is modified |
    | Code quality | `code.logic-off-instance` | Business logic is separated from platform calls and covered by tests that need no instance |
-   | Code quality | `code.secrets` | The tree and history scan clean: `gitleaks git --redact` (older versions: `gitleaks detect --redact`) if gitleaks is installed, otherwise the built-in patterns in `${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-guard.sh` over the tracked files and `git log -p`, listing only file names and counts (`-l`, `-c`), never the matched text |
+   | Code quality | `code.secrets` | The tree and history scan clean: `gitleaks git --redact` (older versions: `gitleaks detect --redact`) if gitleaks is installed, otherwise the built-in patterns in `${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-guard.sh`: for the working tree, file names only (`git ls-files -z \| xargs -0 grep -l -E -f <patterns>`); for history, a count of matching lines only (`git log -p \| grep -c -E -f <patterns>`). Never print the matched text |
    | Readiness | `ready.install` | `now-sdk install --auth <alias>` succeeds (asked first, step 3) |
    | Readiness | `ready.real-user` | Access was checked as an ordinary role, with evidence |
    | Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off |
@@ -198,4 +198,4 @@ in the workspace, next to the repo, never committed.
 
 "Next: work the remediation stories from `BACKLOG.md` by gate distance, then
 grade again at the next milestone." At the last milestone before handoff, run
-`/prove-it:handoff`. It reads the repo and the design records, not this grade.
+`/prove-it:handoff`. It reads `src/` and the design records, not this grade.

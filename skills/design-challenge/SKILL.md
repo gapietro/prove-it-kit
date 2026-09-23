@@ -72,8 +72,9 @@ ask one question and say you'll ask the rest one per turn.
 6. **Read back before writing.** List every term, numbered, in the exact
    wording you will write, and ask: "Confirm these N terms, or correct any."
    (N is the count.) The list includes every term still unanswered, shown as
-   `OPEN`, so the confirmed count is the written count. Splitting, merging or adding a term is proposed here, in
-   the list, never done silently afterwards. If the person asks for changes
+   `OPEN`, so the confirmed count is the written count. Splitting, merging or
+   adding a term is proposed here, in the list, never done silently
+   afterwards. If the person asks for changes
    (for example "split any compound term"), make them and read the whole new
    list back again, with its new count. Write only after the person confirms a
    list.
@@ -91,7 +92,9 @@ B. Propose a new term `C<n+1>` (n = the highest existing term number), or a
    change to an existing term in place. Never renumber or delete terms; a
    withdrawn term is changed to say it is withdrawn. Before writing, read back
    every added or changed term, numbered, in the exact wording, and ask:
-   "Confirm these N terms, or correct any." Write exactly the confirmed terms.
+   "Confirm these N terms, or correct any." If the person changes anything,
+   read the new list back again before writing. Write exactly the confirmed
+   terms.
 C. For **every** term added or changed, add a row to §10 Drift log: today's
    date, the term number, the ruling (what changed and why), and **Signed by
    left blank**. Per the template, the record is now unsigned until a person
@@ -115,8 +118,8 @@ order and headings, terms numbered C1…, §9 Approval blank, §10 Drift log emp
   none. Never batch questions, even when asked to: say the rest will follow,
   one per turn.
 - Write exactly the terms the person confirmed in the read-back: same count,
-  same wording, `OPEN` terms included. Split, merge or add a term only by proposing it in a
-  read-back, never silently.
+  same wording, `OPEN` terms included. Split, merge or add a term only by
+  proposing it in a read-back, never silently.
 - Never fill in §9 Approval or any Signed by cell, not even with a placeholder
   such as a name, "pending" or "Claude".
 - In amend mode, every added or changed term gets its own drift row.
