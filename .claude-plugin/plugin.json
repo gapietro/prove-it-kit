@@ -1,0 +1,8 @@
+{
+  "name": "prove-it",
+  "description": "Build ServiceNow apps with AI, behind inspections: consult, design challenge, build plan, grade, handoff.",
+  "version": "0.1.0",
+  "author": { "name": "gapietro" },
+  "repository": "https://github.com/gapietro/prove-it-kit",
+  "keywords": ["servicenow", "now-sdk", "fluent", "process", "review", "skills"]
+}
