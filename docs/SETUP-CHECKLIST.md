@@ -8,7 +8,7 @@ Tick every box before you start a build (or a recording) with the prove-it kit.
       with only public tools installed: no private plugins, no private skills,
       no personal `~/.claude/CLAUDE.md`, no saved memory from other work.
       What the viewer sees must be what the kit does on its own.
-- [ ] **Node ≥ 18** (`node --version`).
+- [ ] **Node ≥ 20** (`node --version`).
 - [ ] **Claude Code installed** (`claude --version`).
 - [ ] **GitHub CLI signed in**: `gh auth login` done, and `gh auth status` is green.
 - [ ] **now-sdk installed** and `now-sdk auth --add <instance> --alias <alias>`

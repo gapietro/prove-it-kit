@@ -23,7 +23,8 @@ In Claude Code:
 /plugin install prove-it@prove-it
 ```
 
-Then work through [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md). The pre-commit
+Needs Node ≥ 20, `git` and the GitHub CLI (`gh`). Then work through
+[docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md). The pre-commit
 guard is installed separately from a local clone of this repo (`git clone`
 it anywhere; see The guard).
 

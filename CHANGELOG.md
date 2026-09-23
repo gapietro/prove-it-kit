@@ -17,4 +17,5 @@ First version.
 - Tests for the filer and the guard, a sample brief, and acceptance criteria
   for the skills (`tests/ACCEPTANCE.md`).
 - `docs/SETUP-CHECKLIST.md`, this README, and CI running `npm test` on every
-  push and pull request.
+  push and pull request, on Node 20, 22 and 24.
+- Requires Node ≥ 20 (18 is past end of life).

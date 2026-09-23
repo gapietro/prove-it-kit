@@ -2,7 +2,7 @@
   "name": "prove-it-kit",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": { "node": ">=20" },
   "scripts": {
     "test": "node --test tests/*.test.mjs && sh tests/guard.test.sh"
   }
