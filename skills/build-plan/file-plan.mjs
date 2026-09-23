@@ -255,7 +255,7 @@ export async function main(argv) {
   console.log(`plan OK: ${plan.milestones?.length ?? 0} milestones, ${plan.epics?.length ?? 0} epics, ${plan.stories.length} stories (${gated} gated, ${plan.stories.length - gated} register)`);
   if (mode === '--check') return 0;
 
-  const real = (args) => execFileSync('gh', args, { encoding: 'utf8' });
+  const real = (args) => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const apply = mode === '--apply';
   const { problems } = createFiler({ run: apply ? real : dryRunner(real), log: (m) => console.log(m), verify: apply }).apply(plan);
   if (problems.length) { console.error(`read-back failed:\n${problems.map((p) => `  - ${p}`).join('\n')}`); return 1; }
