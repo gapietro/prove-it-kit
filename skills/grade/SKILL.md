@@ -1,6 +1,6 @@
 ---
 name: grade
-description: Use at a milestone of a now-sdk app repo to run the build, tests and lint (judged by exit status), score a fixed 18-criterion rubric (Design, Code quality, Readiness, six each) with the arithmetic shown, cap the score for release blockers, write GRADE.md at the repo root with a forecast, and propose one remediation epic as a plan.json filed only through file-plan.mjs.
+description: Use at a milestone of a now-sdk app repo to run the build, tests and lint (a pass needs exit 0 and no tool-reported error), score a fixed 18-criterion rubric (Design, Code quality, Readiness, six each) with the arithmetic shown, cap the score for release blockers, write GRADE.md at the repo root with a forecast, and propose one remediation epic as a plan.json filed only through file-plan.mjs.
 ---
 
 # grade
