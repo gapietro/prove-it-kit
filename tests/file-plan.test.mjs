@@ -66,7 +66,7 @@ function fakeGh() {
   const s = { labels: [], desc: new Map(), milestones: [], issues: [], writes: [] };
   const val = (args, flag) => args[args.indexOf(flag) + 1];
   const all = (args, flag) => args.flatMap((x, i) => (x === flag ? [args[i + 1]] : []));
-  const shape = (i) => ({ number: i.number, title: i.title, body: i.body,
+  const shape = (i) => ({ number: i.number, state: i.state, title: i.title, body: i.body,
     labels: i.labels.map((name) => ({ name })), milestone: i.milestone ? { title: i.milestone } : null });
   // GitHub labels are case-insensitive; an issue shows the repo label's own casing.
   const canon = (l) => s.labels.find((x) => x.toLowerCase() === l.toLowerCase()) ?? l;
@@ -110,6 +110,11 @@ function fakeGh() {
       for (const l of all(args, '--remove-label')) i.labels = i.labels.filter((x) => x.toLowerCase() !== l.toLowerCase());
       if (args.includes('--milestone')) i.milestone = val(args, '--milestone');
       if (args.includes('--remove-milestone')) i.milestone = null;
+      return '';
+    }
+    if (a === 'issue' && b === 'reopen') {
+      s.writes.push(args);
+      s.issues.find((x) => x.number === Number(args[2])).state = 'open';
       return '';
     }
     if (a === 'issue' && b === 'view') {
@@ -230,6 +235,49 @@ test('--dry-run writes nothing, including label description edits', () => {
   try { createFiler({ run: dryRunner(run), verify: false }).apply(valid()); } finally { console.log = orig; }
   assert.deepEqual(s.writes, [], `dry run wrote: ${JSON.stringify(s.writes)}`);
   assert.ok(printed.some((m) => m.startsWith('[dry-run] gh label edit p0 --description')), 'the edit is printed');
+});
+
+// A regressed grade criterion reuses its fixed key, whose issue may be closed.
+// Reopening is opt-in: build-plan re-applies must not reopen finished stories.
+const closeKey = (s, numbers, key) => { s.issues.find((i) => i.number === numbers.get(key)).state = 'closed'; };
+test('by default, apply leaves a closed matched issue closed', () => {
+  const { s, run } = fakeGh();
+  const { numbers } = createFiler({ run }).apply(valid());
+  closeKey(s, numbers, 'S1'); s.writes = [];
+  createFiler({ run }).apply(valid());
+  assert.equal(s.issues.find((i) => i.number === numbers.get('S1')).state, 'closed');
+  assert.ok(!s.writes.some((w) => w[0] === 'issue' && w[1] === 'reopen'), 'no reopen without the flag');
+});
+test('with reopen, apply reopens a closed matched issue and it counts in BACKLOG', () => {
+  const { s, run, openIssues } = fakeGh();
+  const { numbers } = createFiler({ run }).apply(valid());
+  closeKey(s, numbers, 'S1');
+  const logs = [];
+  createFiler({ run, reopen: true, log: (m) => logs.push(m) }).apply(valid());
+  const n = numbers.get('S1');
+  assert.equal(s.issues.find((i) => i.number === n).state, 'open');
+  assert.ok(logs.includes(`reopened S1 #${n}`), `logs: ${JSON.stringify(logs)}`);
+  assert.match(backlogMarkdown(openIssues()), /Checks run on every push/);
+});
+test('with reopen, a second apply writes nothing', () => {
+  const { s, run } = fakeGh();
+  const { numbers } = createFiler({ run }).apply(valid());
+  closeKey(s, numbers, 'S1');
+  createFiler({ run, reopen: true }).apply(valid());
+  s.writes = [];
+  createFiler({ run, reopen: true }).apply(valid());
+  assert.deepEqual(s.writes, []);
+});
+test('--dry-run with reopen prints the reopen and does not run it', () => {
+  const { s, run } = fakeGh();
+  const { numbers } = createFiler({ run }).apply(valid());
+  closeKey(s, numbers, 'S1'); s.writes = [];
+  const printed = [];
+  const orig = console.log; console.log = (m) => printed.push(m);
+  try { createFiler({ run: dryRunner(run), verify: false, reopen: true }).apply(valid()); } finally { console.log = orig; }
+  assert.deepEqual(s.writes, [], `dry run wrote: ${JSON.stringify(s.writes)}`);
+  assert.ok(printed.includes(`[dry-run] gh issue reopen ${numbers.get('S1')}`), `printed: ${JSON.stringify(printed)}`);
+  assert.equal(s.issues.find((i) => i.number === numbers.get('S1')).state, 'closed');
 });
 
 test('refuses to file when the issue listing may be truncated', () => {
@@ -374,6 +422,11 @@ test('a plan whose stories is not an array is rejected', () => {
 });
 test('--backlog with no path is a usage error', () => {
   const r = spawnSync(process.execPath, [CLI, FIX('plan.valid.json'), '--check', '--backlog'], { encoding: 'utf8' });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /usage/);
+});
+test('--reopen with --check is a usage error', () => {
+  const r = spawnSync(process.execPath, [CLI, FIX('plan.valid.json'), '--check', '--reopen'], { encoding: 'utf8' });
   assert.equal(r.status, 2);
   assert.match(r.stderr, /usage/);
 });
