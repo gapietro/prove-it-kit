@@ -59,11 +59,11 @@ test('bad priority and size are rejected', () => {
   const e = validatePlan(p); has(e, 'priority must be'); has(e, 'size must be');
 });
 
-import { createFiler, backlogMarkdown, LABELS } from '../skills/build-plan/file-plan.mjs';
+import { createFiler, backlogMarkdown, LABELS, dryRunner } from '../skills/build-plan/file-plan.mjs';
 
 // An in-memory stand-in for the gh CLI: the filer takes `run(args) -> stdout`.
 function fakeGh() {
-  const s = { labels: [], milestones: [], issues: [], writes: [] };
+  const s = { labels: [], desc: new Map(), milestones: [], issues: [], writes: [] };
   const val = (args, flag) => args[args.indexOf(flag) + 1];
   const all = (args, flag) => args.flatMap((x, i) => (x === flag ? [args[i + 1]] : []));
   const shape = (i) => ({ number: i.number, title: i.title, body: i.body,
@@ -73,8 +73,17 @@ function fakeGh() {
   const run = (args) => {
     const [a, b] = args;
     if (a === 'repo') return JSON.stringify({ nameWithOwner: 'me/app' });
-    if (a === 'label' && b === 'list') return JSON.stringify(s.labels.map((name) => ({ name })));
-    if (a === 'label' && b === 'create') { s.writes.push(args); s.labels.push(args[2]); return ''; }
+    if (a === 'label' && b === 'list') {
+      const fields = val(args, '--json').split(',');
+      return JSON.stringify(s.labels.map((name) => Object.fromEntries(fields.map((f) => [f, f === 'name' ? name : (s.desc.get(name) ?? '')]))));
+    }
+    if (a === 'label' && b === 'create') { s.writes.push(args); s.labels.push(args[2]); s.desc.set(args[2], val(args, '--description')); return ''; }
+    if (a === 'label' && b === 'edit') {
+      s.writes.push(args);
+      if (!s.labels.includes(args[2])) throw new Error(`fake gh: no label ${args[2]}`);
+      if (args.includes('--description')) s.desc.set(args[2], val(args, '--description'));
+      return '';
+    }
     if (a === 'api' && !args.includes('-f')) {
       // Like the REST API: one page of 100 unless --paginate; --jq '.[].title' gives one title per line.
       const got = args.includes('--paginate') ? s.milestones : s.milestones.slice(0, 100);
@@ -192,12 +201,35 @@ test('labels are matched case-insensitively (P0 and Epic already exist)', () => 
   const { s, run } = fakeGh();
   s.labels.push('P0', 'Epic');
   const { problems } = createFiler({ run }).apply(valid());
-  const created = s.writes.filter((w) => w[0] === 'label').map((w) => w[2].toLowerCase());
+  const created = s.writes.filter((w) => w[0] === 'label' && w[1] === 'create').map((w) => w[2].toLowerCase());
   assert.ok(!created.includes('p0') && !created.includes('epic'), `created ${JSON.stringify(created)}`);
   assert.deepEqual(problems, []);
   const before = s.writes.length;
   createFiler({ run }).apply(valid());
   assert.equal(s.writes.length, before, 'a second apply writes nothing');
+});
+
+test('an owned label with an outdated description is edited once', () => {
+  const { s, run } = fakeGh();
+  s.labels.push('p0'); s.desc.set('p0', 'Blocks the current gate');
+  createFiler({ run }).apply(valid());
+  const edits = s.writes.filter((w) => w[0] === 'label' && w[1] === 'edit');
+  assert.deepEqual(edits, [['label', 'edit', 'p0', '--description', 'Blocks the next gate']]);
+  assert.equal(s.desc.get('p0'), 'Blocks the next gate');
+  const before = s.writes.length;
+  createFiler({ run }).apply(valid());
+  assert.equal(s.writes.filter((w) => w[0] === 'label' && w[1] === 'edit').length, 1, 'a second apply makes no label edits');
+  assert.equal(s.writes.length, before, 'a second apply writes nothing');
+});
+
+test('--dry-run writes nothing, including label description edits', () => {
+  const { s, run } = fakeGh();
+  s.labels.push('p0'); s.desc.set('p0', 'Blocks the current gate');
+  const printed = [];
+  const orig = console.log; console.log = (m) => printed.push(m);
+  try { createFiler({ run: dryRunner(run), verify: false }).apply(valid()); } finally { console.log = orig; }
+  assert.deepEqual(s.writes, [], `dry run wrote: ${JSON.stringify(s.writes)}`);
+  assert.ok(printed.some((m) => m.startsWith('[dry-run] gh label edit p0 --description')), 'the edit is printed');
 });
 
 test('refuses to file when the issue listing may be truncated', () => {

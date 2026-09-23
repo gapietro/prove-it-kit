@@ -1,0 +1,57 @@
+# Allowlist .gitignore (prove-it). Nothing is tracked unless admitted below.
+# Why: a blocklist has to predict every shape a leak can take; an allowlist
+# only has to know what this repo is for.
+#
+# To admit a new file or folder, APPEND one line at the end of this file, on
+# purpose, when you first need it. Never use git add -f; the guard blocks it.
+#   !/path/to/file.md      a single file at the root
+#   !/folder/              a folder (and everything inside it)
+/*
+!/.gitignore
+!/README.md
+!/src/
+# now-sdk project files (VERIFY against a real now-sdk init at your pinned version)
+!/package.json
+!/package-lock.json
+!/now.config.json
+!/tsconfig.json
+!/now.dev.mjs
+!/now.prebuild.mjs
+!/.eslintrc
+
+# Candidates (VERIFY against a real now-sdk init at your pinned version).
+# To admit one, append its pattern line, uncommented, at the end of this file.
+# editor workspace settings
+# !/.vscode/
+# CI workflows
+# !/.github/
+# licence file
+# !/LICENSE
+# newer ESLint config format
+# !/eslint.config.mjs
+
+# Process files — admit each when first created by APPENDING its line at the end of this file (never git add -f):
+# the starter session protocol
+# !/CLAUDE.md
+# design records (docs/DESIGN-<Feature>.md), from the first design-challenge
+# !/docs/
+# the backlog, from the first build-plan
+# !/BACKLOG.md
+# the session note, from the first session close
+# !/SESSION-NOTE.md
+# the grade report, from the first grade
+# !/GRADE.md
+# the runbook, from the first handoff
+# !/RUNBOOK.md
+# the handoff record, from the first handoff
+# !/HANDOFF.md
+# CONSULT.md stays in the workspace, outside the repo; it is never admitted.
+
+# Never track, even inside admitted folders:
+.env*
+.DS_Store
+*.local
+dist/
+drill-card*.md
+
+# Admitted lines appended below this point.
