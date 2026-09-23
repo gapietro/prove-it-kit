@@ -27,5 +27,7 @@ real app; see `tests/ACCEPTANCE.md`).
   steps it can't make exact as VERIFY (found by the acceptance run, E3).
 - A drill card whose "Planted by" is blank is a draft, not a drill: `plant`
   replaces it in place, and `verdict` lists it as never planted and ignores it.
-- Acceptance run 0.1.0 recorded in `tests/ACCEPTANCE.md`: 21 pass, 0 fail,
-  6 unverified.
+- Acceptance run recorded in `tests/ACCEPTANCE.md`: 21 pass, 0 fail,
+  6 unverified. The rows say "0.1.0 (unreleased)" because they were recorded
+  before the release was named; they test exactly the content released as
+  `0.1.0-rc.1`.
