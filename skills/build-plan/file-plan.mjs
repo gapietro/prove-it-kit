@@ -86,6 +86,7 @@ export const LABELS = [
 // any other labels a person added are left alone.
 export const isManaged = (l) => /^gate:/.test(l) || l === 'register' || /^p[0-2]$/.test(l) || /^size:/.test(l);
 
+// Keys are repo-wide: a key's marker ties it to one issue for the life of the repo, across every plan filed there.
 const marker = (key) => `<!-- prove-it:key=${key} -->`;
 const MARKER_RE = /<!-- prove-it:key=([A-Za-z0-9_.-]+) -->/;
 const ref = (key) => `{{${key}}}`;
@@ -150,7 +151,10 @@ export function createFiler({ run, log = () => {}, verify = true }) {
         const c = current.get(it.key);
         if (c) {
           const args = ['issue', 'edit', String(c.number)];
-          if (c.title !== it.title) args.push('--title', it.title);
+          if (c.title !== it.title) {
+            log(`warning: key ${it.key} already belongs to #${c.number} "${c.title}"; it will be updated to "${it.title}". Keys must be unique for the life of the repo.`);
+            args.push('--title', it.title);
+          }
           if (c.body !== body) args.push('--body', body);
           for (const l of it.labels) if (!c.labels.has(l)) args.push('--add-label', l);
           for (const l of c.labels) if (isManaged(l) && !it.labels.includes(l)) args.push('--remove-label', l);

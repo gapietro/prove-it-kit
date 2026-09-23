@@ -168,6 +168,16 @@ test('moving a story to the register drops its gate, priority and milestone', ()
   assert.equal(got.milestone, null);
 });
 
+test('reusing a key for a differently titled item logs a repo-wide key warning', () => {
+  const { run } = fakeGh();
+  const { numbers } = createFiler({ run }).apply(valid());
+  const p = valid(); story(p, 'S1').title = 'Something else entirely';
+  const logged = [];
+  createFiler({ run, log: (m) => logged.push(m) }).apply(p);
+  const want = `warning: key S1 already belongs to #${numbers.get('S1')} "Checks run on every push"; it will be updated to "Something else entirely". Keys must be unique for the life of the repo.`;
+  assert.ok(logged.includes(want), `expected the warning, got ${JSON.stringify(logged)}`);
+});
+
 test('labels a person added are left alone', () => {
   const { s, run } = fakeGh();
   const { numbers } = createFiler({ run }).apply(valid());
