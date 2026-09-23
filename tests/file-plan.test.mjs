@@ -220,3 +220,33 @@ test('a remediation-only plan adds to the backlog instead of replacing it', () =
   assert.match(md, /Fix the cap/);
   assert.match(md, /\*\*Blockers:\*\* 2/);
 });
+
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+const CLI = new URL('../skills/build-plan/file-plan.mjs', import.meta.url).pathname;
+const FIX = (f) => new URL(`./fixtures/${f}`, import.meta.url).pathname;
+
+test('--check accepts a valid plan', () => {
+  const r = spawnSync(process.execPath, [CLI, FIX('plan.valid.json'), '--check'], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /plan OK: 2 milestones, 1 epics, 3 stories \(2 gated, 1 register\)/);
+});
+test('--check rejects an invalid plan with exit 1 and names the problem', () => {
+  const r = spawnSync(process.execPath, [CLI, FIX('plan.invalid.json'), '--check'], { encoding: 'utf8' });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /exactly one of a gate or register/);
+});
+test('no mode prints usage and exits 2', () => {
+  const r = spawnSync(process.execPath, [CLI], { encoding: 'utf8' });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /usage/);
+});
+test('the CLI runs when invoked through a symlink', () => {
+  const link = join(mkdtempSync(join(tmpdir(), 'prove-it-')), 'file-plan.mjs');
+  symlinkSync(CLI, link);
+  const r = spawnSync(process.execPath, [link, FIX('plan.invalid.json'), '--check'], { encoding: 'utf8' });
+  assert.equal(r.status, 1, 'through a symlink the CLI must still run and reject the invalid plan');
+  assert.match(r.stderr, /exactly one of a gate or register/);
+});

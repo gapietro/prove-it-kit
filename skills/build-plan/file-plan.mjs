@@ -220,3 +220,52 @@ export function backlogMarkdown(openIssues, now = new Date()) {
   if (loose.length) out.push('## Needs a gate or register', '', ...loose.map(line), '');
   return out.join('\n');
 }
+
+function dryRunner(real) {
+  let n = 0;
+  const isWrite = (a) => (a[0] === 'label' && a[1] === 'create') || (a[0] === 'issue' && (a[1] === 'create' || a[1] === 'edit'))
+    || (a[0] === 'api' && a.includes('-f'));
+  return (args) => {
+    if (!isWrite(args)) return real(args);
+    console.log(`[dry-run] gh ${args.map((x) => (/[\s"'$]/.test(x) ? JSON.stringify(x) : x)).join(' ')}`.slice(0, 400));
+    return args[0] === 'issue' && args[1] === 'create' ? `https://github.com/dry/run/issues/${900000 + ++n}` : '';
+  };
+}
+
+export async function main(argv) {
+  const [file, mode, ...rest] = argv;
+  if (!file || !['--check', '--dry-run', '--apply'].includes(mode)) {
+    console.error('usage: file-plan.mjs <plan.json> --check | --dry-run | --apply [--backlog <path>]');
+    return 2;
+  }
+  const plan = JSON.parse(readFileSync(file, 'utf8'));
+  const errors = validatePlan(plan);
+  if (errors.length) {
+    console.error(`plan rejected (${errors.length} problem${errors.length > 1 ? 's' : ''}):\n${errors.map((e) => `  - ${e}`).join('\n')}`);
+    return 1;
+  }
+  const gated = plan.stories.filter((s) => !s.register).length;
+  console.log(`plan OK: ${plan.milestones?.length ?? 0} milestones, ${plan.epics?.length ?? 0} epics, ${plan.stories.length} stories (${gated} gated, ${plan.stories.length - gated} register)`);
+  if (mode === '--check') return 0;
+
+  const real = (args) => execFileSync('gh', args, { encoding: 'utf8' });
+  const apply = mode === '--apply';
+  const { problems } = createFiler({ run: apply ? real : dryRunner(real), log: (m) => console.log(m), verify: apply }).apply(plan);
+  if (problems.length) { console.error(`read-back failed:\n${problems.map((p) => `  - ${p}`).join('\n')}`); return 1; }
+  if (apply) {
+    const open = JSON.parse(real(['issue', 'list', '--state', 'open', '--limit', '1000', '--json', 'number,title,labels']));
+    const i = rest.indexOf('--backlog');
+    const path = i >= 0 ? rest[i + 1] : 'BACKLOG.md';
+    writeFileSync(path, backlogMarkdown(open));
+    console.log(`wrote ${path} from ${open.length} open issues`);
+  }
+  return 0;
+}
+
+// Run only when invoked directly. Compare real paths: Node resolves symlinks in
+// import.meta.url but not in argv[1], so a plain comparison would silently skip
+// main() when the kit is reached through a symlink.
+function invokedDirectly() {
+  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
+}
+if (process.argv[1] && invokedDirectly()) process.exitCode = await main(process.argv.slice(2));
