@@ -96,7 +96,7 @@ exit 0
 # Tests for hooks/pre-commit-guard.sh.   Run: sh tests/guard.test.sh
 # Sabotage check (must FAIL): GUARD=tests/fixtures/always-pass-guard.sh sh tests/guard.test.sh
 # Every test secret is built at runtime with printf octal escapes, so this file
-# never contains a literal secret shape (\075 is '=', \137 is '_', \072 is ':').
+# never contains a literal secret shape (\075 is '=', \137 is '_', \072 is ':', \040 is a space).
 set -u
 KIT=$(cd "$(dirname "$0")/.." && pwd)
 GUARD=${GUARD:-$KIT/hooks/pre-commit-guard.sh}
@@ -146,7 +146,7 @@ expect_pass  "clean allowed file passes"        src/app.js 'export const x = 1;'
 expect_pass  "ordinary word 'token' passes"     src/app.js 'const tokenBudget = 20; // token budget'
 expect_block "planted test marker is blocked"   src/app.js "$(printf 'FAKE\137TOKEN\075do-not-use-0000')"
 expect_block "GitHub token shape is blocked"    src/app.js "$(printf 'const t = "ghp\137ABCDEFGHIJKLMNOPQRSTUVWX0123";')"
-expect_block "private key header is blocked"    src/key.txt "$(printf -- '-----BEGIN RSA PRIVATE KEY-----')"
+expect_block "private key header is blocked"    src/key.txt "$(printf -- '-----BEGIN RSA PRIVATE\040KEY-----')"
 expect_block "credentials in a URL are blocked" src/app.js "$(printf 'https://admin\072hunter22@example.invalid/x')"
 expect_block "force-added outside allowlist"    notes.txt 'meeting notes' -f
 
@@ -902,7 +902,8 @@ jobs:
 cp hooks/pre-commit-guard.sh "$(git rev-parse --git-path hooks)/pre-commit"
 chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
 ```
-Then make a trivial commit (e.g. a CHANGELOG line) to confirm the guard lets the kit's own files through.
+Then prove the whole repo is self-safe: re-stage every tracked file through the guard with
+`git ls-files -z | xargs -0 touch && git add -u && git commit --allow-empty -m "chore: guard self-check"` (the guard checks added lines, so also run the pattern list directly: extract the heredoc between `PATTERNS` markers in `hooks/pre-commit-guard.sh` to a temp file and run `git ls-files | xargs grep -n -i -E -f <that file>` — it must print nothing). Docs must describe secret shapes in words ("the FAKE_TOKEN test marker", "a URL with a user and password before the @"), never spell them out.
 
 **Step 2: Install the kit locally and dry-run the chain on the sample brief**, in a scratch workspace outside this repo (never in the series folders):
 ```sh

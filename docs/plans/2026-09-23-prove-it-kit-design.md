@@ -122,8 +122,8 @@ didn't run; handoff never softens a verdict, and `diagnose` never sees the card.
 - Blocks staged files the allowlist doesn't admit (catches `git add -f`):
   `git check-ignore -q --no-index` on each staged path.
 - Blocks added lines matching secret shapes: common token formats, private key
-  headers, `https://user:pass@` URLs, and the test marker
-  `FAKE_TOKEN=do-not-use-`.
+  headers, URLs with a user and password before the `@`, and the FAKE_TOKEN test marker (its exact text lives only in the guard,
+  written so it can't match itself).
 - Optional local patterns from `.prove-it/patterns` (git-ignored).
 - Message leads with **revoke or rotate first**, then remove.
 - Install (works in worktrees and honours `core.hooksPath`):
