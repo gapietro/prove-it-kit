@@ -10,11 +10,22 @@ every session runs. Edit the project facts; keep the rules.
 - Build: `now-sdk build`, then deploy with `now-sdk install --auth <alias>`.
   Always pass `--auth` explicitly so you cannot deploy to the wrong instance.
 - Design records: `docs/DESIGN-<Feature>.md`. Backlog: `BACKLOG.md`. Session state: `SESSION-NOTE.md`.
+- Workspace: the folder holding `brief/` and `CONSULT.md`. The app repo is created
+  inside it (e.g. `<workspace>/app`). `CONSULT.md` stays in the workspace, outside the repo.
+
+## Tracking files
+
+When a step creates a new top-level file or folder in the repo, append its
+`!/path` line to the end of `.gitignore` in the same commit. Never `git add -f`;
+the guard blocks it.
 
 ## Session open
 
 "Read BACKLOG.md and SESSION-NOTE.md. Re-check the live state of any blocker
 they mention (never from memory). Tell me the top three items by gate distance."
+
+Re-derive the next gate and its blockers from the live board (`gh issue list`),
+not from BACKLOG.md. BACKLOG.md is a snapshot; the board is the live copy.
 
 ## Session close
 
@@ -31,13 +42,15 @@ merge on green, delete the branch. No step-by-step questions.
 
 ## Backlog discipline
 
-- Every issue names a gate (`merge`, `install`, `demo`, `handoff`, `publish`) or is `register`.
-- Priority is gate distance only: p0 = current gate, p1 = next, p2 = further.
-- Nothing is picked "because it's quick".
+- Every issue carries one gate label, `gate:<gate>` (`gate:merge`, `gate:install`,
+  `gate:demo`, `gate:handoff`, `gate:publish`), or the `register` label.
 - The next gate is the earliest gate, in the order merge → install → demo →
   handoff → publish, that still has open issues.
-- Blockers-to-gate is the number of open issues labelled with the next gate,
-  not counting `register` issues.
+- Blockers-to-gate is the number of open `gate:<next gate>` issues, not counting
+  `register` issues.
+- Priority is gate distance only: p0 = blocks the next gate; p1 = blocks the gate
+  after it; p2 = further out.
+- Nothing is picked "because it's quick".
 - Blockers-to-gate flat for a week → stop filing, start closing.
 - Audits and grades run at milestones only.
 
