@@ -120,8 +120,10 @@ export function createFiler({ run, log = () => {}, verify = true }) {
     apply(plan) {
       const repo = json(['repo', 'view', '--json', 'nameWithOwner']).nameWithOwner;
 
-      const haveLabels = new Set((json(['label', 'list', '--limit', '500', '--json', 'name']) ?? []).map((l) => l.name));
-      for (const l of LABELS) if (!haveLabels.has(l.name)) run(['label', 'create', l.name, '--color', l.color, '--description', l.description]);
+      // GitHub label names are case-insensitive (P0 and p0 are one label), so every
+      // label name read back from GitHub is lowercased before comparing.
+      const haveLabels = new Set((json(['label', 'list', '--limit', '500', '--json', 'name']) ?? []).map((l) => l.name.toLowerCase()));
+      for (const l of LABELS) if (!haveLabels.has(l.name.toLowerCase())) run(['label', 'create', l.name, '--color', l.color, '--description', l.description]);
 
       const haveMs = new Set((json(['api', `repos/${repo}/milestones?state=all&per_page=100`]) ?? []).map((m) => m.title));
       for (const m of plan.milestones ?? []) {
@@ -133,7 +135,7 @@ export function createFiler({ run, log = () => {}, verify = true }) {
       for (const i of json(['issue', 'list', '--state', 'all', '--limit', '1000', '--json', 'number,title,body,labels,milestone']) ?? []) {
         const m = MARKER_RE.exec(i.body ?? '');
         if (m) current.set(m[1], { number: i.number, title: i.title, body: i.body,
-          labels: new Set((i.labels ?? []).map((l) => l.name)), milestone: i.milestone?.title ?? null });
+          labels: new Set((i.labels ?? []).map((l) => l.name.toLowerCase())), milestone: i.milestone?.title ?? null });
       }
       const numbers = new Map([...current].map(([k, v]) => [k, v.number]));
 
@@ -182,7 +184,7 @@ export function createFiler({ run, log = () => {}, verify = true }) {
       const problems = [];
       if (verify) {
         for (const it of items) {
-          const got = (json(['issue', 'view', String(numbers.get(it.key)), '--json', 'labels'])?.labels ?? []).map((l) => l.name);
+          const got = (json(['issue', 'view', String(numbers.get(it.key)), '--json', 'labels'])?.labels ?? []).map((l) => l.name.toLowerCase());
           const missing = it.labels.filter((l) => !got.includes(l));
           const extra = got.filter((l) => isManaged(l) && !it.labels.includes(l));
           if (missing.length) problems.push(`${it.key} #${numbers.get(it.key)} is missing labels: ${missing.join(', ')}`);

@@ -64,6 +64,8 @@ function fakeGh() {
   const all = (args, flag) => args.flatMap((x, i) => (x === flag ? [args[i + 1]] : []));
   const shape = (i) => ({ number: i.number, title: i.title, body: i.body,
     labels: i.labels.map((name) => ({ name })), milestone: i.milestone ? { title: i.milestone } : null });
+  // GitHub labels are case-insensitive; an issue shows the repo label's own casing.
+  const canon = (l) => s.labels.find((x) => x.toLowerCase() === l.toLowerCase()) ?? l;
   const run = (args) => {
     const [a, b] = args;
     if (a === 'repo') return JSON.stringify({ nameWithOwner: 'me/app' });
@@ -78,7 +80,7 @@ function fakeGh() {
     if (a === 'issue' && b === 'create') {
       s.writes.push(args);
       const number = s.issues.length + 1;
-      s.issues.push({ number, state: 'open', title: val(args, '--title'), body: val(args, '--body'), labels: all(args, '--label'),
+      s.issues.push({ number, state: 'open', title: val(args, '--title'), body: val(args, '--body'), labels: all(args, '--label').map(canon),
         milestone: args.includes('--milestone') ? val(args, '--milestone') : null });
       return `https://github.com/me/app/issues/${number}\n`;
     }
@@ -87,8 +89,8 @@ function fakeGh() {
       const i = s.issues.find((x) => x.number === Number(args[2]));
       if (args.includes('--title')) i.title = val(args, '--title');
       if (args.includes('--body')) i.body = val(args, '--body');
-      for (const l of all(args, '--add-label')) if (!i.labels.includes(l)) i.labels.push(l);
-      for (const l of all(args, '--remove-label')) i.labels = i.labels.filter((x) => x !== l);
+      for (const l of all(args, '--add-label').map(canon)) if (!i.labels.includes(l)) i.labels.push(l);
+      for (const l of all(args, '--remove-label')) i.labels = i.labels.filter((x) => x.toLowerCase() !== l.toLowerCase());
       if (args.includes('--milestone')) i.milestone = val(args, '--milestone');
       if (args.includes('--remove-milestone')) i.milestone = null;
       return '';
@@ -176,6 +178,18 @@ test('reusing a key for a differently titled item logs a repo-wide key warning',
   createFiler({ run, log: (m) => logged.push(m) }).apply(p);
   const want = `warning: key S1 already belongs to #${numbers.get('S1')} "Checks run on every push"; it will be updated to "Something else entirely". Keys must be unique for the life of the repo.`;
   assert.ok(logged.includes(want), `expected the warning, got ${JSON.stringify(logged)}`);
+});
+
+test('labels are matched case-insensitively (P0 and Epic already exist)', () => {
+  const { s, run } = fakeGh();
+  s.labels.push('P0', 'Epic');
+  const { problems } = createFiler({ run }).apply(valid());
+  const created = s.writes.filter((w) => w[0] === 'label').map((w) => w[2].toLowerCase());
+  assert.ok(!created.includes('p0') && !created.includes('epic'), `created ${JSON.stringify(created)}`);
+  assert.deepEqual(problems, []);
+  const before = s.writes.length;
+  createFiler({ run }).apply(valid());
+  assert.equal(s.writes.length, before, 'a second apply writes nothing');
 });
 
 test('labels a person added are left alone', () => {
