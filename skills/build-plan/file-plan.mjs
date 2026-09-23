@@ -152,8 +152,14 @@ export function createFiler({ run, log = () => {}, verify = true }) {
 
       // GitHub label names are case-insensitive (P0 and p0 are one label), so every
       // label name read back from GitHub is lowercased before comparing.
-      const haveLabels = new Set((json(['label', 'list', '--limit', '500', '--json', 'name']) ?? []).map((l) => l.name.toLowerCase()));
-      for (const l of LABELS) if (!haveLabels.has(l.name.toLowerCase())) run(['label', 'create', l.name, '--color', l.color, '--description', l.description]);
+      // An owned label whose description has drifted (e.g. an older kit's wording) is
+      // edited to match; other labels and colours are left alone.
+      const haveLabels = new Map((json(['label', 'list', '--limit', '500', '--json', 'name,description']) ?? []).map((l) => [l.name.toLowerCase(), l]));
+      for (const l of LABELS) {
+        const have = haveLabels.get(l.name.toLowerCase());
+        if (!have) run(['label', 'create', l.name, '--color', l.color, '--description', l.description]);
+        else if (isManaged(l.name) && (have.description ?? '') !== l.description) run(['label', 'edit', have.name, '--description', l.description]);
+      }
 
       // --paginate reads every page; --jq prints one title per line.
       const msList = String(run(['api', '--paginate', `repos/${repo}/milestones?state=all&per_page=100`, '--jq', '.[].title']) ?? '');
@@ -265,9 +271,9 @@ export function backlogMarkdown(openIssues, now = new Date()) {
   return out.join('\n');
 }
 
-function dryRunner(real) {
+export function dryRunner(real) {
   let n = 0;
-  const isWrite = (a) => (a[0] === 'label' && a[1] === 'create') || (a[0] === 'issue' && (a[1] === 'create' || a[1] === 'edit'))
+  const isWrite = (a) => (a[0] === 'label' && (a[1] === 'create' || a[1] === 'edit')) || (a[0] === 'issue' && (a[1] === 'create' || a[1] === 'edit'))
     || (a[0] === 'api' && a.includes('-f'));
   return (args) => {
     if (!isWrite(args)) return real(args);
