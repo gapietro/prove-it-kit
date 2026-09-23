@@ -22,8 +22,8 @@ Arguments given: `$ARGUMENTS` (may be empty).
   `docs/DESIGN-*.md` in the current directory; if there is none, look in
   `../docs/` the same way. If there is still none, or more than one, ask which.
   Never pick one yourself.
-- **Template:** `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md` holds the signing
-  rule. Read it; don't restate it from memory.
+- **Template:** `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md` §9 holds the
+  signing rule. Read it each time and apply it exactly as written.
 - **Script:** `${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs`. Never
   call `gh issue create`, `gh label` or the milestones API yourself.
 - **Priority rule:** `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.md`, Backlog
@@ -32,12 +32,8 @@ Arguments given: `$ARGUMENTS` (may be empty).
 ## Steps
 
 1. **Check the signatures. Refuse if unsigned.** Read the record's §9 Approval
-   and §10 Drift log. Header and separator rows are not data rows.
-   - §9 passes only if at least one row has all four cells filled: Name,
-     Role, Date, Signature. The template's blank `| | | | |` row fails.
-   - §10 passes only if every data row has Signed by filled. An empty drift
-     log (header only) passes.
-   If either fails, stop. Say the record is unsigned and name the exact gap,
+   and §10 Drift log, and apply the signing rule in the template's §9. Header
+   and separator rows are not data rows. If the record is unsigned, stop. Say the record is unsigned and name the exact gap,
    for example "§9 Approval: Date and Signature are empty" or "§10 Drift log,
    row 2 (C4): Signed by is empty". Say: "A person signs this; I don't. Run me
    again once it is signed." Draft nothing and run nothing.
@@ -46,7 +42,8 @@ Arguments given: `$ARGUMENTS` (may be empty).
    any `OPEN` item; it becomes a story or an open question, never a guess.
 3. **Read the board, if a repo is reachable.** From inside the app repo run
    `gh api --paginate 'repos/{owner}/{repo}/milestones?state=all&per_page=100' --jq '.[].title'`
-   and `gh issue list --state all --limit 1000 --json number,title,body`. Reuse
+   and `gh issue list --state all --limit 5000 --json number,title,body`. If
+   the list comes back with 5000 items, it is truncated. Stop and say so. Reuse
    existing milestone titles exactly (milestones are matched by title, so a
    changed title makes a duplicate). Collect keys already used in
    `<!-- prove-it:key=… -->` markers; a new key must not reuse one.
@@ -81,7 +78,7 @@ Arguments given: `$ARGUMENTS` (may be empty).
    from the repo) or a temp folder. Never inside the repo. It is a working
    file and is not committed; the board is the record.
 6. **Check it.** Run
-   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs <plan.json> --check`.
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "<plan.json>" --check`.
    If it is rejected, fix the plan and run it again. Never edit the script to
    make a plan pass.
 7. **Preview and stop.** Show the `plan OK` summary line, then a table:
@@ -92,12 +89,15 @@ Arguments given: `$ARGUMENTS` (may be empty).
    List which term each story covers, and any term or pass criterion with no
    story. Then say: "Reply 'approve' to file this, or tell me what to change."
    End your turn. File nothing until the person approves.
-8. **Dry run.** On approval, offer a dry run first:
-   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs <plan.json> --dry-run`.
-   It prints every write it would make and files nothing, but it reads the live repo, so it also runs
-   from inside the app repo with `gh` authenticated (`gh auth status`).
-9. **Apply.** From inside the app repo (`git rev-parse --show-toplevel`), run
-   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs <plan.json> --apply --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`.
+8. **Dry run or apply.** On "approve", ask: "Dry run first (recommended), or
+   apply now?" If dry run: run
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "<plan.json>" --dry-run`,
+   show the count of writes, and stop for "apply". The dry run files nothing,
+   but it reads the live repo. Run it from inside the app repo with `gh`
+   authenticated (`gh auth status`).
+9. **Apply.** Only after "apply" (or "apply now"), from inside the app repo
+   (`git rev-parse --show-toplevel`), run
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "<plan.json>" --apply --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`.
    Report what it created, updated and left unchanged. If the read-back fails,
    show the problems. Don't hand-edit issues to hide them.
 10. **Track BACKLOG.md.** If `.gitignore` has no `!/BACKLOG.md` line, append
