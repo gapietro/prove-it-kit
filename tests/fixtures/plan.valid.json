@@ -1,0 +1,19 @@
+{
+  "milestones": [
+    { "key": "M1", "title": "S1 · Foundation", "description": "Gate boundary: merge" },
+    { "key": "M2", "title": "S2 · Core build", "description": "Gate boundary: install" }
+  ],
+  "epics": [
+    { "key": "E1", "title": "Foundation", "body": "Repo, checks, test harness." }
+  ],
+  "stories": [
+    { "key": "S1", "title": "Checks run on every push", "epic": "E1", "milestone": "M1", "gate": "merge",
+      "priority": "p0", "size": "s", "dependsOn": [], "doneWhen": "A push runs the tests and reports green.",
+      "honestLimit": "Proves the tests run, not that they are good." },
+    { "key": "S2", "title": "Install from source", "epic": "E1", "milestone": "M2", "gate": "install",
+      "priority": "p1", "size": "m", "dependsOn": ["S1"], "doneWhen": "now-sdk install succeeds on the PDI.",
+      "honestLimit": "Proves one instance, not a fresh one.", "body": "Follows {{S1}}." },
+    { "key": "S3", "title": "Consider dark mode", "epic": "E1", "register": true, "size": "s",
+      "doneWhen": "Decided.", "honestLimit": "Blocks nothing." }
+  ]
+}
