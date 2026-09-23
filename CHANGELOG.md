@@ -16,8 +16,8 @@ Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
   `design.terms-tested` and `design.gates-evidenced`. Caps are set by
   criterion id, and `code.tests` unverified now caps at 49 (D7).
 - `grade` judges build, tests and lint only by the exit status of the plain
-  command, quoting the output as evidence; no visible status means
-  unverified (D8).
+  command, quoting the output as evidence; no visible status, or exit 0 with
+  output that reports an error, means unverified, never a pass (D8).
 - `grade` never runs `now-sdk auth --list`; it asks for the install alias by
   name (D9).
 - `grade` remediation proposes one story per failed or unverified criterion,
