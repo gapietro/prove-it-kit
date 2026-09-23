@@ -46,6 +46,10 @@ test('duplicate keys are rejected', () => {
   const p = valid(); story(p, 'S2').key = 'S1';
   has(validatePlan(p), 'duplicate key S1');
 });
+test('a key with characters outside A-Z a-z 0-9 _ . - is rejected', () => {
+  const p = valid(); story(p, 'S3').key = 'S 3';
+  const e = validatePlan(p); has(e, '"S 3"'); has(e, 'letters, digits, _ . -');
+});
 test('bad priority and size are rejected', () => {
   const p = valid(); Object.assign(story(p, 'S1'), { priority: 'urgent', size: 'xl' });
   const e = validatePlan(p); has(e, 'priority must be'); has(e, 'size must be');

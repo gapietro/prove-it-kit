@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 export const GATES = ['merge', 'install', 'demo', 'handoff', 'publish'];
 const PRIORITIES = ['p0', 'p1', 'p2'];
 const SIZES = ['s', 'm', 'l'];
+// Keys go into the hidden issue marker and {{KEY}} references, so they are limited to these characters.
+const KEY_RE = /^[A-Za-z0-9_.-]+$/;
 
 export function validatePlan(plan) {
   const errors = [];
@@ -22,6 +24,7 @@ export function validatePlan(plan) {
   const seen = new Set();
   for (const item of [...(plan.milestones ?? []), ...(plan.epics ?? []), ...stories]) {
     if (!item.key) { errors.push(`item without a key: ${JSON.stringify(item).slice(0, 60)}`); continue; }
+    if (!KEY_RE.test(item.key)) errors.push(`key "${item.key}" may use only letters, digits, _ . -`);
     if (seen.has(item.key)) errors.push(`duplicate key ${item.key}`);
     seen.add(item.key);
     if (!item.title) errors.push(`${item.key}: missing title`);
