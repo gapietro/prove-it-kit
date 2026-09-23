@@ -9,15 +9,25 @@ Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
 - `design-challenge` reads every term back, numbered, and asks "Confirm these
   N terms, or correct any." before writing; the record holds exactly the
   confirmed list. Splits, merges and additions are proposed in the read-back,
-  never made silently. `amend` reads back added or changed terms the same way
-  (B7).
+  never made silently. A confirmation with conditions ("yes, but split…") or
+  a waived read-back is not a confirmation. `amend` reads back added or
+  changed terms the same way (B7).
 - `grade` scores a fixed 18-criterion rubric, six per dimension, the same for
   every project; per-term checks are `n of m` coverage inside
   `design.terms-tested` and `design.gates-evidenced`. Caps are set by
   criterion id, and `code.tests` unverified now caps at 49 (D7).
-- `grade` judges build, tests and lint only by the exit status of the plain
-  command, quoting the output as evidence; no visible status, or exit 0 with
-  output that reports an error, means unverified, never a pass (D8).
+- `grade` judges build, tests and lint by one verdict rule on the plain
+  command: a pass needs exit 0 and no error reported by the tool itself (an
+  `ERROR:` line from now-sdk, `npm ERR!`, a failed-test count above zero).
+  Exit 0 with such an error is unverified, never a pass; a non-zero exit is a
+  fail, except exit 127 (tool missing), which is unverified; no visible
+  status is unverified. The build uses the `build` script if there is one,
+  else `now-sdk build` (D8).
+- `grade` rubric rows pass only with evidence of the kind each names (for
+  example file:line lists for `design.drift-ruled` and `code.oob`, a cited
+  non-admin check for `ready.real-user`); without it they are unverified.
+  The secrets scan takes its patterns from the guard and never prints matched
+  text.
 - `grade` never runs `now-sdk auth --list`; it asks for the install alias by
   name (D9).
 - `grade` remediation proposes one story per failed or unverified criterion,
