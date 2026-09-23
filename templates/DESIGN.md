@@ -6,7 +6,7 @@ What is being built and why, in three lines.
 
 ## 2. Context
 
-Link to CONSULT.md and other sources by reference. Never paste them in.
+Cite CONSULT.md by name and date (not a link: it lives in the workspace, outside the repo), and other sources the same way. Never paste them in.
 
 ## 3. Terms
 
@@ -34,7 +34,7 @@ Roles, ACLs, scope boundaries and what data leaves the instance.
 
 ## 7. Gates
 
-One row per gate this feature touches. Pass criteria use numbers where possible.
+One row per gate this feature touches. Gate is one of merge, install, demo, handoff, publish. Pass criteria use numbers where possible.
 
 | Gate | Pass criteria |
 |---|---|
