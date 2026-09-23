@@ -95,25 +95,31 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    worthless as evidence. Open a fresh session in the repo root and run
    `/prove-it:handoff diagnose` again." Then stop.
 2. Otherwise read **only** `RUNBOOK.md`. Don't list or read `..`, `docs/`,
-   `src/`, git history, or any other file.
+   `src/`, git history, or any other file. The only exception is the name
+   check in step 5.
 3. Get the symptom from the arguments, or ask for it. Record it word for word.
 4. Diagnose step by step from the index. Match the symptom to a row, and ask
    the person to look where that row says and tell you what they see. Narrow
    it down one step at a time. If no row fits, say so. That is a runbook gap,
    not something to guess around.
-5. Write the diagnosis notes to `$(git rev-parse --show-toplevel)/../drill-notes.md`:
-   the exact symptom text, each step (the row used, what was checked, what
-   was seen), the diagnosis and fix proposed, and any runbook gap. Don't read
-   anything else in that folder.
+5. Write the diagnosis notes to a new file for this attempt,
+   `$(git rev-parse --show-toplevel)/../drill-notes-<n>.md`, where n = 1, 2, …
+   is the next unused number. To find n, list names only
+   (`ls ../drill-notes-*.md`). Never read an earlier attempt's notes: a second
+   attempt must be as fresh as the first. The notes hold the exact symptom
+   text, each step (the row used, what was checked, what was seen), the
+   diagnosis and fix proposed, and any runbook gap. Don't read anything else
+   in that folder.
 
 ### `verdict`
 
-1. Read the `HANDOFF.md` draft, `RUNBOOK.md`, `../drill-card.md` and
-   `../drill-notes.md`. The drill is over, so you may read the card now.
+1. Read the `HANDOFF.md` draft, `RUNBOOK.md`, `../drill-card.md` and every
+   `../drill-notes-<n>.md`, in number order. The drill is over, so you may
+   read the card now.
 2. **Check 3** passes only if a diagnose session found the planted cause from
-   the runbook alone, and the restore is confirmed. If the first attempt
-   failed, the runbook was fixed, and a fresh second attempt succeeded, record
-   both attempts. Check 3 still passes on the second attempt.
+   the runbook alone, and the restore is confirmed. Record every attempt from
+   its own notes file. If the first attempt failed, the runbook was fixed, and
+   a fresh second attempt succeeded, record both. Check 3 still passes on the second attempt.
 3. Re-run check 1 and check 2 against the current repo, and don't rely on the
    draft's numbers.
 4. Write `HANDOFF.md` from the template. The verdict is **READY** only if
@@ -125,8 +131,9 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 
 - `RUNBOOK.md` at the repo root, from the template.
 - `HANDOFF.md` at the repo root: a draft (no argument), then final (`verdict`).
-- `../drill-card.md` (`plant`) and `../drill-notes.md` (`diagnose`): both in
-  the workspace, outside the repo, never committed.
+- `../drill-card.md` (`plant`) and one `../drill-notes-<n>.md` per
+  `diagnose` attempt: all in the workspace, outside the repo, never
+  committed.
 
 ## Rules you can't break
 
@@ -144,6 +151,10 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 
 ## Hand-off
 
+After `diagnose`: "Notes are in `../drill-notes-<n>.md`. If the diagnosis
+missed, fix the runbook, re-plant if needed, and run `diagnose` again in
+another fresh session. It writes the next numbered file. Once the restore is
+confirmed, run `/prove-it:handoff verdict`, which reads every notes file."
 On READY: "Hand the repo, `RUNBOOK.md` and `HANDOFF.md` to the receiving team
 (What PS receives lists it)." On NOT READY: "Close the open items (anything that
 changes scope goes through `/prove-it:design-challenge amend` first), then run
