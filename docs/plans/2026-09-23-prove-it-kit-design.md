@@ -81,7 +81,7 @@ on it (the handoff format is pinned in one place: `templates/DESIGN.md`).
 | `/prove-it:consult [brief]` | brief (default: the one file in `brief/`) | `CONSULT.md`, workspace root | Restates constraints in ≤ 5 bullets and **waits for confirmation** (it may ask clarifying questions here). Then: every capability → plain code / Now Assist skill / agent with a reason (agent only where orchestration can't be predetermined); tables, roles, write-ownership, scope; cost and how it's bounded; readiness per requirement (ready / conditional / not ready); foundation work list |
 | `/prove-it:design-challenge [consult]` | `CONSULT.md` (default `./CONSULT.md`) | `docs/DESIGN-<Feature>.md` from `templates/DESIGN.md` | The human designs; the skill challenges failure modes, security, cost, boundaries. Numbered terms C1…; gates with pass criteria; rejected alternatives with reasons; approval table **left for a person to sign**; drift log. **`amend`** mode adds a term or drift entry to an existing record and marks it for re-signing |
 | `/prove-it:build-plan [design]` | a **signed** design record | labels, milestones, issues; `BACKLOG.md` | Drafts `plan.json`; shows a preview; **waits for approval**; runs `file-plan.mjs`. Milestones are gate boundaries, not calendar. Refuses an unsigned design |
-| `/prove-it:grade [milestone]` | repo, board | `GRADE.md`, repo root | Runs build and tests itself; **asks before `now-sdk install`**. Scores design, code quality, production readiness; release blockers cap the score; anything not run is reported unverified; always writes a **forecast** (score if the plan is done, which cap releases). Findings → one remediation epic, **proposed**, filed on approval |
+| `/prove-it:grade [milestone]` | repo, board | `GRADE.md`, repo root | Runs build and tests itself; **asks before `now-sdk install`**. Scores design, code quality, production readiness; release blockers cap the score; anything not run is reported unverified; always writes a **forecast** (score if the plan is done, which cap releases). Findings → one remediation epic, **proposed** as a `plan.json` and filed on approval **through `file-plan.mjs`** (so every remediation story names a gate or `register`, and re-running grade files nothing twice) |
 | `/prove-it:handoff` | repo, design records | `RUNBOOK.md`, `HANDOFF.md` draft | Check 1: every shipped artifact traces to a design reason; gaps listed. Check 2: runbook (install, traps, recovery, symptom → cause index using only platform UI and the app's own lists and logs) |
 | `/prove-it:handoff plant` | repo | a drill card **outside the repo** (`../drill-card.md`) | Proposes one realistic failure and its restore steps; stops |
 | `/prove-it:handoff diagnose` | **only** `RUNBOOK.md` + the symptom | diagnosis notes | Must run in a **fresh session**; refuses if it detects a drill card or the design records in its context |
@@ -111,8 +111,10 @@ didn't run; handoff never softens a verdict, and `diagnose` never sees the card.
   missing.
 - **After filing:** replaces `{{KEY}}` references with issue numbers, reads every
   issue back to confirm labels, writes `BACKLOG.md`.
-- **Blockers-to-gate** = open issues labelled `gate:<next gate>`, excluding
-  `register`. `BACKLOG.md` shows it at the top.
+- **Next gate** = the earliest gate, in the order merge → install → demo →
+  handoff → publish, that still has open issues. **Blockers-to-gate** = open
+  issues labelled `gate:<next gate>`, excluding `register`. `BACKLOG.md` shows
+  both at the top; the session protocol uses the same definition.
 - **Safety:** `gh` is called with `execFile` argument arrays, never a shell
   string.
 
@@ -124,7 +126,13 @@ didn't run; handoff never softens a verdict, and `diagnose` never sees the card.
   `FAKE_TOKEN=do-not-use-`.
 - Optional local patterns from `.prove-it/patterns` (git-ignored).
 - Message leads with **revoke or rotate first**, then remove.
-- Install: `cp <kit>/hooks/pre-commit-guard.sh .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`.
+- Install (works in worktrees and honours `core.hooksPath`):
+  `cp <kit>/hooks/pre-commit-guard.sh "$(git rev-parse --git-path hooks)/pre-commit" && chmod +x "$(git rev-parse --git-path hooks)/pre-commit"`.
+- **Never matches itself:** its patterns are written so their own text can't
+  match (e.g. `FAKE_TOKEN[=]do-not-use-`), and every test secret is built at
+  runtime from octal escapes, so no literal secret shape is ever committed to
+  this repo — the guard can guard the repo it ships in. Docs refer to "the
+  FAKE_TOKEN test marker" rather than spelling it out.
 
 ### `templates/gitignore.allowlist`
 Root-level deny (`/*`), then one `!/path` line per admitted file or folder; an
@@ -146,10 +154,10 @@ the answer*); re-entry at Contract for new asks.
 | `/prove-it:consult` argument form, output location, asks first? | Optional brief path; `CONSULT.md` in the workspace root; restates and waits for confirmation first |
 | `/prove-it:design-challenge` input | Optional consult path, default `./CONSULT.md`; `amend` mode for changes |
 | Template file names | `templates/gitignore.allowlist`, `templates/CLAUDE.md`, `hooks/pre-commit-guard.sh` |
-| Guard install line | The `cp … && chmod +x …` line above |
+| Guard install line | The `cp … "$(git rev-parse --git-path hooks)/pre-commit"` line above |
 | How the allowlist re-admits a folder | `!/folder/` after `/*` |
 | Label names | `gate:*`, `register`, `p0`–`p2`, `size:*`, `epic` |
-| How blockers are counted | Open `gate:<next gate>` issues, excluding `register` |
+| How blockers are counted | Open `gate:<next gate>` issues, excluding `register`; the next gate is the earliest gate with open issues |
 | `/prove-it:grade` input; installs itself?; forecast? | Optional milestone; asks before installing; always writes a forecast |
 | `/prove-it:handoff` check 3 | Split into `plant` and `diagnose` (fresh session), then `verdict` |
 | `docs/SETUP-CHECKLIST.md` | Ships in the kit |
