@@ -114,11 +114,25 @@ export const storyLabels = (s) => (s.register ? ['register', `size:${s.size}`] :
 export const resolveRefs = (text, numbers) =>
   text.replace(/\{\{([A-Za-z0-9_.-]+)\}\}/g, (m, k) => (numbers.has(k) ? `#${numbers.get(k)}` : m));
 
+export const ISSUE_LIMIT = 5000;
+
+// gh issue list silently stops at --limit. A full page means the listing may be
+// truncated, and filing against a partial listing would create duplicates.
+export function listIssues(run, state, fields) {
+  const list = JSON.parse(run(['issue', 'list', '--state', state, '--limit', String(ISSUE_LIMIT), '--json', fields]) || '[]');
+  if (list.length >= ISSUE_LIMIT) {
+    throw new Error(`more than ${ISSUE_LIMIT} issues: re-run with a narrower repo or raise the limit — refusing to risk duplicates`);
+  }
+  return list;
+}
+
 export function createFiler({ run, log = () => {}, verify = true }) {
   const json = (args) => JSON.parse(run(args) || 'null');
   return {
     apply(plan) {
       const repo = json(['repo', 'view', '--json', 'nameWithOwner']).nameWithOwner;
+      // List issues before any write, so a refusal leaves the repo untouched.
+      const existing = listIssues(run, 'all', 'number,title,body,labels,milestone');
 
       // GitHub label names are case-insensitive (P0 and p0 are one label), so every
       // label name read back from GitHub is lowercased before comparing.
@@ -132,7 +146,7 @@ export function createFiler({ run, log = () => {}, verify = true }) {
       const msTitle = new Map((plan.milestones ?? []).map((m) => [m.key, m.title]));
 
       const current = new Map();
-      for (const i of json(['issue', 'list', '--state', 'all', '--limit', '1000', '--json', 'number,title,body,labels,milestone']) ?? []) {
+      for (const i of existing) {
         const m = MARKER_RE.exec(i.body ?? '');
         if (m) current.set(m[1], { number: i.number, title: i.title, body: i.body,
           labels: new Set((i.labels ?? []).map((l) => l.name.toLowerCase())), milestone: i.milestone?.title ?? null });
@@ -275,7 +289,7 @@ export async function main(argv) {
   const { problems } = createFiler({ run: apply ? real : dryRunner(real), log: (m) => console.log(m), verify: apply }).apply(plan);
   if (problems.length) { console.error(`read-back failed:\n${problems.map((p) => `  - ${p}`).join('\n')}`); return 1; }
   if (apply) {
-    const open = JSON.parse(real(['issue', 'list', '--state', 'open', '--limit', '1000', '--json', 'number,title,labels']));
+    const open = listIssues(real, 'open', 'number,title,labels');
     writeFileSync(backlogPath, backlogMarkdown(open));
     console.log(`wrote ${backlogPath} from ${open.length} open issues`);
   }

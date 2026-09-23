@@ -192,6 +192,19 @@ test('labels are matched case-insensitively (P0 and Epic already exist)', () => 
   assert.equal(s.writes.length, before, 'a second apply writes nothing');
 });
 
+test('refuses to file when the issue listing may be truncated', () => {
+  const { s, run } = fakeGh();
+  const full = (args) => {
+    if (args[0] === 'issue' && args[1] === 'list') {
+      const limit = Number(args[args.indexOf('--limit') + 1]);
+      return JSON.stringify(Array.from({ length: limit }, (_, i) => ({ number: i + 1, title: `t${i}`, body: '', labels: [], milestone: null })));
+    }
+    return run(args);
+  };
+  assert.throws(() => createFiler({ run: full }).apply(valid()), /more than 5000 issues/);
+  assert.equal(s.writes.length, 0, 'nothing was written');
+});
+
 test('labels a person added are left alone', () => {
   const { s, run } = fakeGh();
   const { numbers } = createFiler({ run }).apply(valid());
