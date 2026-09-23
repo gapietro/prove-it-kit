@@ -33,7 +33,8 @@ With no argument, the inputs are exactly:
 - `src/`;
 - `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
   `${CLAUDE_PLUGIN_ROOT}/templates/HANDOFF.md`;
-- an existing `RUNBOOK.md`, if present;
+- an existing `RUNBOOK.md` and `HANDOFF.md` draft, if present (a re-run
+  rewrites the draft);
 - `.gitignore`, which step 4 edits.
 
 Read nothing else — not GRADE.md, not BACKLOG.md. The other modes list their
