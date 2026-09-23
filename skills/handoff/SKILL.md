@@ -57,8 +57,9 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    "pending". Under Verdict, write "Draft: no verdict until the drill has
    run." Never write READY in a draft.
 4. **Track the files.** When `RUNBOOK.md` or `HANDOFF.md` is first created,
-   append `!/RUNBOOK.md` and `!/HANDOFF.md` to the end of `.gitignore` in the
-   same commit.
+   append `!/RUNBOOK.md` and `!/HANDOFF.md` to the end of `.gitignore`. Don't
+   commit. Tell the person to commit `.gitignore` with the new files together
+   on a branch, never on main.
 5. Tell the person: "Next: `/prove-it:handoff plant`."
 
 ### `plant`
