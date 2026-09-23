@@ -52,7 +52,7 @@ Arguments given: `$ARGUMENTS` (may be empty).
    **Verdict rule.** The shell tool marks a failed command with its non-zero
    exit code (for example `Exit code 1`); a result with no error marker is
    exit 0. A pass needs exit 0 and no error reported by the tool itself: an
-   `ERROR:` line from now-sdk, `npm ERR!`, or a failed-test count above zero.
+   `ERROR:` line from now-sdk, `npm ERR!` or `npm error`, or a failed-test count above zero.
    Text printed by passing tests (logged errors, warnings) doesn't count.
    Exit 0 with a tool-reported error is **unverified**, with the
    contradiction quoted as evidence, never a pass. A non-zero exit is always a
@@ -199,7 +199,7 @@ in the workspace, next to the repo, never committed.
   a preview, and is headed that way.
 - Run the build, tests and lint yourself before judging, as plain commands.
   A pass needs exit 0 and no error reported by the tool itself (an `ERROR:`
-  line from now-sdk, `npm ERR!`, or a failed-test count above zero); exit 0
+  line from now-sdk, `npm ERR!` or `npm error`, or a failed-test count above zero); exit 0
   with such an error is unverified, never pass. A non-zero exit is always a
   fail, except exit 127 (tool missing), which is unverified. No visible
   status is unverified.

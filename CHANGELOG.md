@@ -18,7 +18,7 @@ Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
   criterion id, and `code.tests` unverified now caps at 49 (D7).
 - `grade` judges build, tests and lint by one verdict rule on the plain
   command: a pass needs exit 0 and no error reported by the tool itself (an
-  `ERROR:` line from now-sdk, `npm ERR!`, a failed-test count above zero).
+  `ERROR:` line from now-sdk, `npm ERR!` or `npm error`, a failed-test count above zero).
   Exit 0 with such an error is unverified, never a pass; a non-zero exit is a
   fail, except exit 127 (tool missing), which is unverified; no visible
   status is unverified. The build uses the `build` script if there is one,
