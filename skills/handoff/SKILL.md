@@ -148,6 +148,8 @@ own inputs in their steps.
    (`../drill-card.md`, `../drill-card-<n>.md`) and every
    `../drill-notes-<n>.md`, in number order. The drill is over, so you may
    read the cards now.
+   For the re-run in step 3, also read `src/`, the design records
+   (`docs/DESIGN-*.md`) and the two templates.
 2. **Check 3.** A card whose "Planted by" line is blank was never planted.
    List it as "never planted, ignored"; it neither passes nor blocks check 3.
    Say that if it was in fact planted, a person must fill in "Planted by" and
