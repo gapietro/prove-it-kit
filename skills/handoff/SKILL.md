@@ -46,12 +46,14 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    and the **Symptom → cause index**. Build the index from the design
    records' failure modes and the traps: one row per symptom. "Where to look"
    names only platform screens (lists, forms, system logs, the scheduler,
-   system properties) and the app's own lists and logs. The runbook must
-   stand alone. It must contain no source paths, no code, no design-record
-   names or term numbers, and no secrets, credentials or instance hostnames.
-   The diagnose session reads only this file. Check 2 passes when every
-   section is filled and every failure mode in the design records has an
-   index row. Otherwise, list what is missing.
+   system properties) and the app's own lists and logs. Name a screen by its
+   table list (for example `sys_properties.list`) or mark it **VERIFY**. The
+   runbook must stand alone. It must contain no source paths, no code, no
+   design-record names or term numbers, and no secrets, credentials or
+   instance hostnames. The diagnose session reads only this file. Check 2
+   passes when every section is filled, every failure mode in the design
+   records has an index row, and no VERIFY remains. Otherwise, list what is
+   missing.
 3. **Write a `HANDOFF.md` draft** from the template. Fill Check 1 (the table
    and n of m) and Check 2 (the link and what is not covered). Set Check 3 to
    "pending". Under Verdict, write "Draft: no verdict until the drill has
@@ -71,13 +73,16 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    production instance. **Never make the change yourself.**
 2. Write the drill card to `$(git rev-parse --show-toplevel)/../drill-card.md`
    (the workspace, outside the repo; the allowlist also ignores
-   `drill-card*.md`). It holds: the failure, exact steps to plant it, the
+   `drill-card*.md`). If that file already exists, never overwrite it: write
+   `../drill-card-<n>.md` with the next unused n (2, 3, …). It holds: the failure, exact steps to plant it, the
    symptom a user would report (the text to give the diagnose session), and
    the exact restore steps with a check that the restore worked. Leave blank
    lines for "Planted by", "Planted on" and "Restored on".
 3. Tell the person: plant it on the test instance, ideally someone else does
    it. Then open a **fresh session** in the repo root, with nothing else
-   read, and run `/prove-it:handoff diagnose <symptom>`. Then **stop**. Never
+   read, and run `/prove-it:handoff diagnose <symptom>`. Open the diagnose
+   session with auto-memory off, or from a fresh clone at a different path,
+   so no memory from the build or plant sessions loads. Then **stop**. Never
    diagnose in this session.
 
 ### `diagnose`
@@ -86,7 +91,10 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    session:
    - a drill card has been read, pasted or shown (any `drill-card*.md`, or its
      contents);
+   - a drill card was written in this session, or this session ran `plant`;
    - a design record (`DESIGN-*.md`) or `CONSULT.md` has been read or shown;
+   - any auto-loaded memory or notes mention the drill, a planted change, or
+     design-record content;
    - the current directory is not the repo root, for example the workspace
      root next to `CONSULT.md`.
    A file path only mentioned in an auto-loaded `CLAUDE.md` doesn't count. To
@@ -113,11 +121,14 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 
 ### `verdict`
 
-1. Read the `HANDOFF.md` draft, `RUNBOOK.md`, `../drill-card.md` and every
+1. Read the `HANDOFF.md` draft, `RUNBOOK.md`, every drill card
+   (`../drill-card.md`, `../drill-card-<n>.md`) and every
    `../drill-notes-<n>.md`, in number order. The drill is over, so you may
-   read the card now.
+   read the cards now.
 2. **Check 3** passes only if a diagnose session found the planted cause from
-   the runbook alone, and the restore is confirmed. Record every attempt from
+   the runbook alone, and the restore is confirmed. Confirmed means a person
+   has filled in the card's "Restored on" line; your own belief doesn't
+   count. Record every attempt from
    its own notes file. If the first attempt failed, the runbook was fixed, and
    a fresh second attempt succeeded, record both. Check 3 still passes on the second attempt.
 3. Re-run check 1 and check 2 against the current repo, and don't rely on the
@@ -131,9 +142,12 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 
 - `RUNBOOK.md` at the repo root, from the template.
 - `HANDOFF.md` at the repo root: a draft (no argument), then final (`verdict`).
-- `../drill-card.md` (`plant`) and one `../drill-notes-<n>.md` per
-  `diagnose` attempt: all in the workspace, outside the repo, never
-  committed.
+- `../drill-card.md` (`../drill-card-<n>.md` for later plants) and one
+  `../drill-notes-<n>.md` per `diagnose` attempt: all in the workspace,
+  outside the repo, never committed.
+- In every mode, anything recorded from command output (`now-sdk install`,
+  `now-sdk auth`, logs) has the instance host replaced with `<instance>` and
+  no URLs. Record the alias, never the host.
 
 ## Rules you can't break
 
