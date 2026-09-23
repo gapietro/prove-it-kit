@@ -140,7 +140,8 @@ Arguments given: `$ARGUMENTS` (may be empty).
    every blocker with its evidence and cap:
    - **Cap 49:** `code.build` fail or unverified; `code.tests` fail or
      unverified (no test script means no evidence of tests, which must never
-     score better than failing tests); `code.secrets` fail.
+     score better than failing tests); `code.secrets` fail or unverified (a
+     secrets scan that couldn't run is a safeguard you can't show).
    - **Cap 74:** `design.signed` (including a missing record),
      `design.terms-tested`, `design.gates-evidenced` (a gate criterion not
      run still caps), `code.oob` or `ready.ai-bounded` fail **or

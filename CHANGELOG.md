@@ -15,7 +15,7 @@ Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
 - `grade` scores a fixed 18-criterion rubric, six per dimension, the same for
   every project; per-term checks are `n of m` coverage inside
   `design.terms-tested` and `design.gates-evidenced`. Caps are set by
-  criterion id: `code.tests` unverified now caps at 49, and the 74 cap fires
+  criterion id: `code.tests` and `code.secrets` unverified now cap at 49, and the 74 cap fires
   on fail or unverified for `design.signed`, `design.terms-tested`,
   `design.gates-evidenced`, `code.oob` and `ready.ai-bounded`, because a
   safeguard you can't show counts as missing. An app with no AI call passes
