@@ -1,8 +1,11 @@
 # Changelog
 
-## 0.1.0 — unreleased
+## 0.1.0-rc.1 — 2026-09-23 (release candidate, private)
 
-First version.
+First version. Tagged `v0.1.0-rc.1`. Not yet public: publishing waits for
+employer approval, and the skill-quality gaps in issue #8 are due before the
+series records. Acceptance run: 21 pass, 0 fail, 6 unverified (the six need a
+real app; see `tests/ACCEPTANCE.md`).
 
 - Five skills: `consult`, `design-challenge` (with `amend`), `build-plan`,
   `grade` and `handoff` (with `plant`, `diagnose` and `verdict`).
