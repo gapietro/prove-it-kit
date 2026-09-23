@@ -73,11 +73,18 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    production instance. **Never make the change yourself.**
 2. Write the drill card to `$(git rev-parse --show-toplevel)/../drill-card.md`
    (the workspace, outside the repo; the allowlist also ignores
-   `drill-card*.md`). If that file already exists, never overwrite it: write
+   `drill-card*.md`). First check the existing cards' "Planted by" lines
+   (read only that line). A card whose "Planted by" is blank was never
+   planted: replace that card in place, and tell the person which file you
+   replaced and why. Otherwise never overwrite a card: write
    `../drill-card-<n>.md` with the next unused n (2, 3, …). It holds: the failure, exact steps to plant it, the
    symptom a user would report (the text to give the diagnose session), and
    the exact restore steps with a check that the restore worked. Leave blank
-   lines for "Planted by", "Planted on" and "Restored on".
+   lines for "Planted by", "Planted on" and "Restored on"; the person who
+   plants fills in the first two.
+   Write the card even if the app isn't built or installed yet: mark any step
+   you can't make exact as **VERIFY**, with what to confirm first. Until a
+   person fills in "Planted by", the card is a draft, not a drill.
 3. Tell the person: plant it on the test instance, ideally someone else does
    it. Then open a **fresh session** in the repo root, with nothing else
    read, and run `/prove-it:handoff diagnose <symptom>`. Open the diagnose
@@ -129,10 +136,15 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    (`../drill-card.md`, `../drill-card-<n>.md`) and every
    `../drill-notes-<n>.md`, in number order. The drill is over, so you may
    read the cards now.
-2. **Check 3** passes only if a diagnose session found the planted cause from
-   the runbook alone, and every planted failure is restored. Restored means a
-   person has filled in the "Restored on" line on **every** drill card; your
-   own belief doesn't count, and one card left blank means NOT READY. Record
+2. **Check 3.** A card whose "Planted by" line is blank was never planted.
+   List it as "never planted, ignored"; it neither passes nor blocks check 3.
+   Say that if it was in fact planted, a person must fill in "Planted by" and
+   "Restored on" and run `verdict` again. Check 3 passes only if at least one
+   planted card exists, a diagnose session found a planted cause from the
+   runbook alone, and every planted failure is restored. Restored means a
+   person has filled in the "Restored on" line on **every** planted card;
+   your own belief doesn't count, and one planted card left blank means NOT
+   READY, naming that card. Record
    every attempt from its own notes file. If the first attempt failed, the
    runbook was fixed, and a fresh second attempt succeeded, record both.
    Check 3 still passes on the second attempt.
