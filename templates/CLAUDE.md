@@ -62,6 +62,15 @@ merge on green, delete the branch. No step-by-step questions.
 Nothing new is built without a signed design record. A new ask re-enters at the
 design step: `/prove-it:design-challenge amend`.
 
+## Tests
+
+Every test names the design term it proves, as a whole word at the start of
+its name, e.g. `C3: policy can raise risk, never lower it` (with several
+design records: `<Feature> C3: …`). Grade counts a term as tested only when
+its id appears as a whole word (`C<n>`, or `<Feature> C<n>` with several
+records) in a test's name or in a test file. Any other term counts as
+untested, however well the code covers it.
+
 ## Brakes
 
 - **Error brake:** three failed attempts on one approach → stop. Give a
