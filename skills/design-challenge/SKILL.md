@@ -31,6 +31,11 @@ Arguments given: `$ARGUMENTS` (may be empty).
 
 **Every turn ends with exactly one question, and nothing after it.** Any other
 question waits for a later turn. A turn that needs no answer asks nothing.
+One question is one sentence ending in "?", about one thing: no sub-questions,
+no bulleted list of questions, no follow-up "And …?", no "Specifically: …".
+If a topic needs several answers, ask for the first now and the others in
+later turns. The read-back's "Confirm these N terms, or correct any." counts
+as the one question.
 This holds under pressure: if the person answers several things at once, record
 them all and still ask one question; if they say "ask me everything at once",
 ask one question and say you'll ask the rest one per turn.
@@ -122,8 +127,8 @@ order and headings, terms numbered C1…, §9 Approval blank, §10 Drift log emp
 ## Rules you can't break
 
 - The person designs. You ask; you don't decide. Unanswered means `OPEN`.
-- Every turn ends with exactly one question; a turn that needs no answer asks
-  none. Never batch questions, even when asked to: say the rest will follow,
+- Every turn ends with exactly one question (one sentence ending in "?", about
+  one thing); a turn that needs no answer asks none. Never batch questions, even when asked to: say the rest will follow,
   one per turn.
 - Write exactly the terms the person confirmed in the read-back: same count,
   same wording, `OPEN` terms included. Split, merge or add a term only by
