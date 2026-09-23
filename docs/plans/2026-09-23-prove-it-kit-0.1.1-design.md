@@ -40,7 +40,7 @@ Per-term checks feed a single criterion as a coverage ratio, so a design with
 | Code quality | `code.lint` | The `lint` script passes by the verdict rule (unverified if there is none) |
 | Code quality | `code.oob` | Every declaration in `src/` whose table or target is outside the app's scope is listed with file:line; passes only if the list is empty or every entry extends rather than modifies. No list → unverified |
 | Code quality | `code.logic-off-instance` | The logic modules are named, shown not to reference `Glide*` or `gs`, and shown to be imported by `npm test` (exit 0); cited file:line |
-| Code quality | `code.secrets` | The tree and history scan clean (guard patterns; gitleaks if installed) |
+| Code quality | `code.secrets` | The tracked tree and history scan clean. The pattern scan (the guard's built-in patterns, and `.prove-it/patterns` matched ignoring case) always runs over the tracked tree and history; each pattern file is validated first, and any grep error makes the row unverified, never clean. gitleaks, if installed, also scans history |
 | Readiness | `ready.install` | `now-sdk install --auth <alias>` succeeds (asked first) |
 | Readiness | `ready.real-user` | A cited test, issue or PR comment shows a check done as a non-admin role; otherwise unverified |
 | Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off; cite the property or setting for the rate limit, budget and off switch, file:line. If there is no AI call in `src/`, it passes; cite the search that found none (so apps without AI aren't penalised) |

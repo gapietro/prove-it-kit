@@ -30,8 +30,10 @@ Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
 - `grade` rubric rows pass only with evidence of the kind each names (for
   example file:line lists for `design.drift-ruled` and `code.oob`, a cited
   non-admin check for `ready.real-user`); without it they are unverified.
-  The secrets scan takes its patterns from the guard and never prints matched
-  text.
+  The secrets scan always runs the guard's patterns and `.prove-it/patterns`
+  (ignoring case) over the tracked tree and history, plus gitleaks over
+  history if installed; an invalid pattern or any grep error makes it
+  unverified, never clean. It never prints matched text.
 - `grade` never runs `now-sdk auth --list`; it asks for the install alias by
   name (D9).
 - `grade` remediation proposes one story per failed or unverified criterion,

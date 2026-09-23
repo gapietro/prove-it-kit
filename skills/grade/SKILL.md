@@ -99,7 +99,7 @@ Arguments given: `$ARGUMENTS` (may be empty).
    | Code quality | `code.lint` | `npm run lint` passes by the verdict rule (unverified if there is no lint script) |
    | Code quality | `code.oob` | List every declaration in `src/` whose table or target is outside the app's scope, with file:line. Pass only if the list is empty or every entry extends rather than modifies. No list → unverified |
    | Code quality | `code.logic-off-instance` | Name the logic modules, show they don't reference `Glide*` or `gs`, and show that `npm test` (exit 0) imports them; cite file:line |
-   | Code quality | `code.secrets` | The tree and history scan clean, by the secrets scan below. Never print the matched text |
+   | Code quality | `code.secrets` | The secrets scan below is clean: the pattern scan (the guard's patterns and `.prove-it/patterns`) over the tracked tree and history, and gitleaks over history if installed. Never print the matched text |
    | Readiness | `ready.install` | `now-sdk install --auth <alias>` succeeds (asked first, step 3) |
    | Readiness | `ready.real-user` | A cited test, issue or PR comment shows a check done as a non-admin role; otherwise unverified |
    | Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off; cite the property or setting for the rate limit, budget and off switch, file:line. If there is no AI call in `src/`, it passes; cite the search that found none (so apps without AI aren't penalised) |
@@ -107,20 +107,30 @@ Arguments given: `$ARGUMENTS` (may be empty).
    | Readiness | `ready.demo-honest` | Demo data is seeded; no real records; cite the seed records in `src/` |
    | Readiness | `ready.gate-clear` | Zero open blockers for the milestone's gate (the open gated issues counted in step 1) |
 
-   **Secrets scan** (`code.secrets`). If gitleaks is installed, run
-   `gitleaks git --redact` (older versions: `gitleaks detect --redact`) and
-   judge it by the verdict rule. Otherwise take the patterns from the guard
-   itself and write them to a temporary file outside the repo:
-   `sed -n "/<<'PATTERNS'/,/^PATTERNS/p" ${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-guard.sh | sed '1d;$d'`.
-   If `.prove-it/patterns` exists, write its lines, with comment and blank
-   lines stripped, to a second temporary file: like the guard, those are
-   matched ignoring case (`grep -i`), and the built-ins are not. For each
-   pattern file, list file names only for the working tree
-   (`git ls-files -z | xargs -0 grep -l -E -f <patterns>`, adding `-i` for
-   the local file) and a count of matching lines only for history
-   (`git log -p | grep -c -E -f <patterns>`, `-i` likewise). Grep exit 1, or
-   xargs exit 123, with no file names, and history counts of 0, mean clean.
-   Never print the matched text.
+   **Secrets scan** (`code.secrets`). Two parts; never print matched text.
+   - **Pattern scan (always).** It covers the tracked tree and the history.
+     Take the built-in patterns from the guard itself into a temporary file
+     outside the repo:
+     `sed -n "/<<'PATTERNS'/,/^PATTERNS/p" ${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-guard.sh | sed '1d;$d'`.
+     If `.prove-it/patterns` exists, write its lines, with comment and blank
+     lines stripped, to a second temporary file; like the guard, those are
+     matched ignoring case (`-i`), and the built-ins are not. First validate
+     each file as the guard does: `printf 'x\n' | grep -E -f <file>` (add
+     `-i` for the local file). A status above 1 means an invalid pattern:
+     `code.secrets` is unverified ("invalid pattern"). Then, for each file,
+     list file names only for the tracked tree
+     (`git ls-files -z | xargs -0 grep -l -E -f <file> 2> <errfile>`) and a
+     count of matching lines only for history
+     (`git log -p | grep -c -E -f <file> 2> <errfile>`), with `-i` for the
+     local file. If any `<errfile>` is non-empty, the scan is unverified,
+     never clean. Clean means: no file names (xargs exit 123 or grep exit 1),
+     history counts of 0, and every `<errfile>` empty.
+   - **gitleaks (if installed), in addition.** It covers the history (the
+     commits), not uncommitted files. Run `gitleaks git --redact` (older
+     versions: `gitleaks detect --redact`) and judge it by the verdict rule.
+
+   `code.secrets` passes only if both parts that ran are clean. Say in the
+   evidence which ran and what each covered.
 
 5. **Show the arithmetic.** Pass = 1; fail and unverified = 0, and
    unverified is shown as such. Dimension score = round(100 × passes ÷ 6),
