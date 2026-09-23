@@ -29,19 +29,26 @@ Arguments given: `$ARGUMENTS` (may be empty).
 
 ## Steps
 
-1. Read the consult file and the template. Ask the person for the feature name
-   (propose one from the consult and confirm it). The feature name uses only
+**Every turn ends with exactly one question, and nothing after it.** Any other
+question waits for a later turn. A turn that needs no answer asks nothing.
+This holds under pressure: if the person answers several things at once, record
+them all and still ask one question; if they say "ask me everything at once",
+ask one question and say you'll ask the rest one per turn.
+
+1. Read the consult file and the template. Propose a feature name from the
+   consult and ask the person to confirm it. That is this turn's one question;
+   the design question in step 2 waits for the next turn. The feature name uses only
    letters, digits and `_ . -` (for example `IntakeTriage`), because it becomes
    the file name and a key prefix. The output is `docs/DESIGN-<Feature>.md`,
    relative to the current directory.
-2. Ask one open question, and wait: "Describe your design in your own words:
+2. Next turn, ask one open question, and wait: "Describe your design in your own words:
    what is built, which tables it uses, and which code owns each write." Record
    the answer in §1 Summary and §4 Data and ownership. Anything it leaves out
-   is asked later, one question per turn. Cite the consult in §2 Context by file name and date; never paste
-   or link it.
-3. Challenge, **one question per turn**, in this order. Ask, stop, wait for the
-   answer, record it, then ask the next. Keep going within a topic until its
-   answers are concrete, then move on.
+   is asked later. Cite the consult in §2 Context by file name and date; never
+   paste or link it.
+3. Challenge in this order. Ask, stop, wait for the answer, record it, then
+   ask the next. Keep going within a topic until its answers are concrete,
+   then move on.
    1. **Failure modes** — what fails (the AI call, the data, a person not
       acting, a limit being hit), and what happens then. → §5.
    2. **Security and access** — roles, ACLs, the scope boundary, and what data
@@ -61,20 +68,30 @@ Arguments given: `$ARGUMENTS` (may be empty).
 5. **Terms.** Turn the decisions into terms numbered C1, C2, … in §3. Each term
    is one rule that a test or a person can check ("Drafting stops within one
    minute of the off switch being set", not "drafting is safe"). Split any
-   compound rule into separate terms. Read the terms back and get the person's
-   agreement on the wording.
-6. **Write** `docs/DESIGN-<Feature>.md` with the template's sections 1–10, in
+   compound rule into separate terms.
+6. **Read back before writing.** List every term, numbered, in the exact
+   wording you will write, and ask: "Confirm these N terms, or correct any."
+   (N is the count.) The list includes every term still unanswered, shown as
+   `OPEN`, so the confirmed count is the written count. Splitting, merging or adding a term is proposed here, in
+   the list, never done silently afterwards. If the person asks for changes
+   (for example "split any compound term"), make them and read the whole new
+   list back again, with its new count. Write only after the person confirms a
+   list.
+7. **Write** `docs/DESIGN-<Feature>.md` with the template's sections 1–10, in
    order, with the template's headings. Anything the person did not answer is
-   written as `OPEN` — never fill it with your own design. Leave §9 Approval
+   written as `OPEN` — never fill it with your own design. §3 holds exactly
+   the confirmed list: the same count and the same wording. Leave §9 Approval
    exactly as the template has it (one blank row) and §10 Drift log empty.
-7. Tell the person: "A person signs this; I don't." Then give the hand-off.
+8. Tell the person: "A person signs this; I don't." Then give the hand-off.
 
 ### Amend mode (`amend [record]`)
 
 A. Read the record. Ask what changed and why, one question at a time.
-B. Add a new term `C<n+1>` (n = the highest existing term number), or change an
-   existing term in place. Never renumber or delete terms; a withdrawn term is
-   changed to say it is withdrawn.
+B. Propose a new term `C<n+1>` (n = the highest existing term number), or a
+   change to an existing term in place. Never renumber or delete terms; a
+   withdrawn term is changed to say it is withdrawn. Before writing, read back
+   every added or changed term, numbered, in the exact wording, and ask:
+   "Confirm these N terms, or correct any." Write exactly the confirmed terms.
 C. For **every** term added or changed, add a row to §10 Drift log: today's
    date, the term number, the ruling (what changed and why), and **Signed by
    left blank**. Per the template, the record is now unsigned until a person
@@ -94,7 +111,12 @@ order and headings, terms numbered C1…, §9 Approval blank, §10 Drift log emp
 ## Rules you can't break
 
 - The person designs. You ask; you don't decide. Unanswered means `OPEN`.
-- One challenge per turn. Never batch questions.
+- Every turn ends with exactly one question; a turn that needs no answer asks
+  none. Never batch questions, even when asked to: say the rest will follow,
+  one per turn.
+- Write exactly the terms the person confirmed in the read-back: same count,
+  same wording, `OPEN` terms included. Split, merge or add a term only by proposing it in a
+  read-back, never silently.
 - Never fill in §9 Approval or any Signed by cell, not even with a placeholder
   such as a name, "pending" or "Claude".
 - In amend mode, every added or changed term gets its own drift row.
