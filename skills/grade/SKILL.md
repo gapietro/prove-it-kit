@@ -30,13 +30,14 @@ Arguments given: `$ARGUMENTS` (may be empty).
 ## Steps
 
 1. **Check the milestone is reached.** Count its open gated issues:
-   `gh issue list --milestone "<title>" --state open --limit 1000 --json number,labels`,
-   ignoring `register` and `epic`. If any are open, say: "This milestone is not
-   reached (<n> open). Grades run at milestones, not mid-sprint." List them and
-   ask whether to grade anyway. If the board can't be read, record the
-   milestone status as unverified and ask the same question. On a no, stop.
-   On a yes, head `GRADE.md` "Preview: milestone not reached". A preview
-   never counts as the milestone grade.
+   `gh issue list --milestone '<title>' --state open --limit 5000 --json number,labels`,
+   ignoring `register` and `epic`. If the list comes back with 5000 items, it
+   is truncated. Stop and say so. If any gated issues are open, say: "This
+   milestone is not reached (<n> open). Grades run at milestones, not
+   mid-sprint." List them and ask whether to grade anyway. If the board can't
+   be read, record the milestone status as unverified and ask the same
+   question. On a no, stop. On a yes, head `GRADE.md` "Preview: milestone not
+   reached". A preview never counts as the milestone grade.
 2. **Run the build.** `now-sdk build`, or the repo's `build` script if
    `package.json` has one. Record the exact command, exit code and the last
    lines of output (errors in full).
@@ -46,25 +47,31 @@ Arguments given: `$ARGUMENTS` (may be empty).
    script the same way if one exists. A missing check is never a pass.
 4. **Ask before installing.** Show `now-sdk auth --list` and the alias from
    `CLAUDE.md`, then ask: "Install to `<alias>` with
-   `now-sdk install --auth <alias>`?" Wait for the answer. Only on a yes, run
-   exactly that. Never use `--alias` on install: it is silently ignored and
-   deploys to the default alias. If the answer is no, install and every check
-   that needs the instance are "unverified (not installed)".
+   `now-sdk install --auth <alias>`?" Wait for the answer. A yes counts only
+   if it names the alias. If asked to skip, show the install question anyway
+   and wait for the literal reply; a waiver is not a confirmation. Only on a
+   yes, run exactly that. Never use `--alias` on install: it is silently
+   ignored and deploys to the default alias. If the answer is no, install and
+   every check that needs the instance are "unverified (not installed)".
+   When you record output from `now-sdk install` or `now-sdk auth`, replace
+   the instance host with `<instance>` and leave out URLs. Record the alias,
+   never the host.
 5. **Build the criteria list** for each dimension. Each criterion is pass,
    fail or unverified, with its evidence (a command and its result, a file and
    line, or an issue number). Each has a fixed id, shown in brackets. `<F>` is
    the record's feature name, `<n>` the term number, and `<gate>`, `<table>`,
-   `<call>` are names from the record. Always use these ids, so the same
-   finding gets the same id at every grade.
-   - **Sound design:** every design record is signed [`design.<F>.signed`],
-     by the signing rule in `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md`: §9
-     Approval has at least one row with Name, Role, Date and Signature all
-     filled, **and** every §10 drift-log row has Signed by filled (an empty
-     drift log passes; header rows are not data rows);
-     every term has code that implements it [`design.<F>.C<n>.built`];
-     every table in §4 has exactly one owner of writes in the code
-     [`design.<F>.<table>.owner`]; every failure mode in §5 has handling in
-     the code [`design.<F>.fail<row>`].
+   `<call>` are names from the record. For `<table>` and `<call>`, replace any
+   character outside letters, digits and `_ . -` with `-`. Always use these
+   ids, so the same finding gets the same id at every grade.
+   - **No design record:** if the repo has no `docs/DESIGN-*.md`, record
+     [`design.missing`] as fail and tell the person to move the record in from
+     the workspace.
+   - **Sound design:** every design record is signed [`design.<F>.signed`].
+     Apply the signing rule in `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md` §9
+     exactly as written there. Every term has code that implements it
+     [`design.<F>.C<n>.built`]. Every table in §4 has exactly one owner of
+     writes in the code [`design.<F>.<table>.owner`]. Every failure mode in §5
+     has handling in the code [`design.<F>.fail<row>`].
    - **Code quality:** the build passes [`code.build`]; the tests pass
      [`code.tests`]; the lint passes, if there is one [`code.lint`]; every term
      has an automated test [`code.<F>.C<n>.test`]; no out-of-box workflow,
@@ -80,12 +87,13 @@ Arguments given: `$ARGUMENTS` (may be empty).
    **stay in the total**; never drop them to raise the score. Write each one
    out, for example `Code quality: 3 passed of 5 → 100 × 3 ÷ 5 = 60`.
    Computed score = the mean of the three, rounded.
-7. **Apply release-blocker caps.** List every release blocker with its
-   evidence and cap:
-   - build fails, tests fail, or a secret is in the repo → cap 49;
-   - an unsigned design record, a term with no check, an AI call with no
-     bound, a modified out-of-box workflow, or a failed §7 criterion at a gate
-     this milestone claims → cap 74.
+7. **Apply release-blocker caps**, by criterion id. List every blocker with
+   its evidence and cap:
+   - `code.build` fail or unverified, `code.tests` fail, or `ready.secrets`
+     fail → cap 49;
+   - `ready.install` not pass at a milestone whose gate is install or later;
+     or any `design.missing`, `design.<F>.signed`, `code.<F>.C<n>.test`,
+     `ready.ai.<call>`, `code.oob` or `ready.<F>.<gate>.<row>` fail → cap 74.
    Final score = min(computed score, lowest cap). Bands: 90–100 ready to ship
    the gate; 75–89 ready with named fixes; 50–74 not ready (blocked); 0–49
    broken. A cap can't be averaged away, and no strength elsewhere lifts it.
@@ -100,18 +108,23 @@ Arguments given: `$ARGUMENTS` (may be empty).
    deterministic so a re-grade updates instead of duplicating: epic
    `grade.<gate>` and stories `grade.<gate>.<criterion id>`, where `<gate>` is
    the milestone's gate name (never its title). Keys use only letters, digits
-   and `_ . -`. Write it in the workspace (`../plan-grade.json`),
-   never in the repo. Run `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs <file> --check`,
-   show the preview table, and stop for approval.
-10. **File only on approval**, only through the filer: offer
-    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs <file> --dry-run`,
-    then the same with
-    `--apply --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`. The
-    filer also rewrites `BACKLOG.md` from the open issues.
-11. **Write `GRADE.md`** at the repo root (sections under Output). If
-    `.gitignore` has no `!/GRADE.md` line, append it at the end. Don't commit.
-    Tell the person to commit `.gitignore` and `GRADE.md` together on a
-    branch, never on main.
+   and `_ . -`. Write it in the workspace (`../plan-grade.json`), never in the
+   repo, and run
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "<plan.json>" --check`.
+10. **Write `GRADE.md` now**, at the repo root (sections under Output), with
+    Remediation marked "proposed, not filed". If `.gitignore` has no
+    `!/GRADE.md` line, append it at the end. Don't commit. Tell the person to
+    commit `.gitignore` and `GRADE.md` together on a branch, never on main.
+11. **Stop for approval.** Show the remediation preview table and end your
+    turn. On "approve", ask: "Dry run first (recommended), or apply now?" If
+    dry run: run
+    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "<plan.json>" --dry-run`,
+    show the count of writes, and stop for "apply".
+12. **Only after "apply"** (or "apply now"), run
+    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "<plan.json>" --apply --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`.
+    File only through the filer; it also rewrites `BACKLOG.md` from the open
+    issues. After a successful apply, update only the Remediation section of
+    `GRADE.md` with the issue numbers.
 
 ## Output
 
@@ -119,14 +132,16 @@ Arguments given: `$ARGUMENTS` (may be empty).
 (`git rev-parse --short HEAD`). Sections, in this order:
 
 1. **Checks run** — table: check · exact command · result (exit code, counts).
+   Recorded output never contains an instance host or URL. Write `<instance>`
+   and name the alias.
 2. **Unverified** — every check not run, and why.
 3. **Scores** — per dimension: the criteria, each with its id (pass / fail /
    unverified, with evidence), and the arithmetic; then the computed score.
-4. **Release blockers and caps** — table: blocker · evidence · cap. Then the
-   final score, its band, and which cap set it.
+4. **Release blockers and caps** — table: criterion id · evidence · cap. Then
+   the final score, its band, and which cap set it.
 5. **Forecast** — score if the remediation is done, caps released, caps left.
-6. **Remediation** — the epic and its stories, and whether they were filed
-   (issue numbers) or only proposed.
+6. **Remediation** — the epic and its stories: "proposed, not filed", or,
+   after apply, the issue numbers.
 
 ## Rules you can't break
 
