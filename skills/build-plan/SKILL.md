@@ -96,8 +96,8 @@ Arguments given: `$ARGUMENTS` (may be empty).
    | Key | Title | Epic | Milestone | Gate / register | Priority | Size | Depends on | Done when |
    |---|---|---|---|---|---|---|---|---|
 
-   List which term each story covers, and any term or pass criterion with no
-   story. Then say: "Reply 'approve' to file this, or tell me what to change."
+   List which term each story covers, any term or pass criterion with no
+   story, and any term that no story's `doneWhen` asks tests to name. Then say: "Reply 'approve' to file this, or tell me what to change."
    End your turn. File nothing until the person approves.
 8. **Dry run or apply.** On "approve", ask: "Dry run first (recommended), or
    apply now?" If dry run: run
