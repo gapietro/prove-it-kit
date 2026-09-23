@@ -40,6 +40,10 @@ in the scratch workspace.
 from issue #14: **0 pass, 2 fail**. Pending the 0.1.2 fixes; T1 is checked from the file, and P6 must
 pass on a headless build-plan re-run.
 
+**0.1.2 re-run, 2026-09-23, kit 0.1.2 (unreleased):** **2 pass, 0 fail**. T1 passes from the file, and P6
+passes on a headless build-plan run against the signed 0.1.1 record (dry run only, nothing filed).
+P1 and P4 were re-checked and pass. Raw files are in `acceptance-0.1.2/raw/` in the scratch workspace.
+
 How it was run: headless `claude -p` 2.1.280 with `--plugin-dir <kit>`,
 `--setting-sources project`, `--strict-mcp-config`, auto-memory off, a narrow
 `--allowedTools` list per step, and `--resume` for multi-turn skills. It ran in a
@@ -117,6 +121,9 @@ Numbered P1–P6 so they don't collide with design-record terms (C1, C2, …).
 | 2026-09-23 | 0.1.0 (unreleased) | P4 | Pass | Dry run printed 71 writes (13 labels, 4 milestones, 40 issues, 14 body edits). Afterwards: `gh issue list` → 0 issues, 0 milestones, no kit labels. `54-bp-t3-dryrun.json`, `.transcript.jsonl` |
 | 2026-09-23 | 0.1.0 (unreleased) | P5 | Pass | The same `--apply` run again: 40 × `unchanged`, no created or updated lines; still 40 issues and 4 milestones. The skill's own Bash calls held no direct `gh issue create`, `gh label` or milestone POST. `57-p5-reapply.txt`, `55-bp-t4-apply.transcript.jsonl` |
 | 2026-09-23 | 0.1.1 | P6 | Fail | Evidence is the 0.1.0 run's plan (`acceptance/raw/plan.json`, preview `52-bp-t1.json`): the 0.1.1 re-run did not re-run build-plan. It holds for 0.1.1 because `git diff v0.1.0-rc.1 v0.1.1 -- skills/build-plan/SKILL.md templates/CLAUDE.md` is empty. Of 34 stories, 25 cite a term id in `doneWhen`; none requires tests to name it (the only "name" hit, KGF.S31, is about masking people's names). The ids appear only as references to the term, for example KGF.S03: "Unit tests pass showing: the signature is the 5 most frequent terms after lowercasing and stop-word removal, sorted (C6); frequency ties break alphabetically (C7); a note with fewer than 5 terms uses the terms it has (C8)." Tests written to that done-when can pass without naming C6–C8, and then grade's `design.terms-tested` counts those terms as untested |
+| 2026-09-23 | 0.1.2 (unreleased) | P1 | Pass | The signed 0.1.1 record (§9 complete, drift row C31 signed) was accepted: "§9 has a complete row, and the only §10 drift row … has Signed by filled in". It then read the board, drafted `../plan.json`, ran `--check` (`plan OK: 4 milestones, 8 epics, 43 stories (39 gated, 4 register)`) and showed the preview. `acceptance-0.1.2/raw/10-bp-t1.json` |
+| 2026-09-23 | 0.1.2 (unreleased) | P4 | Pass | "approve" → "Dry run first (recommended), or apply now?" → "dry run": `file-plan.mjs ../plan.json --dry-run` planned 66 writes (51 issue creates, 15 body edits; no labels or milestones needed) and filed nothing. Board before and after: 40 issues and 4 milestones. Not applied. `11-bp-t2.json`, `12-bp-t3-dryrun.json`, `00-before-counts.txt`, `13-after-counts.txt` |
+| 2026-09-23 | 0.1.2 (unreleased) | P6 | Pass | Headless build-plan on kit `fix/issue-14` against the signed 0.1.1 KnowledgeGapFinder record (98 terms). In `plan.json`, all 36 stories that cite term ids and build something ask for tests named with those ids. The 7 that cite an id without it are rule-on-OPEN stories, which the skill exempts (S11, S12, S13, S21, S28, S31, S37). Examples: S02 "Unit tests named C8, C9, C10, C11 and C12 pass, showing …"; S23 "on the PDI, tests named C30, C31 and C32 fire Draft from several sessions at once …"; S33 "on the PDI, tests named C69, C70, C71, C72, C73 and C75 show an author can't approve their own draft …". 97 of 98 terms are asked to be named. The exception is C85 (OPEN, the 60% target), which has only a register ruling story. The preview names C85 as the one OPEN term without a build story ("C85 stays in the register"), but its coverage line says "none missing" rather than listing C85 as a term no test is asked to name. `plan.json`, `P6-analysis.txt`, `10-bp-t1.json` |
 
 ## grade
 
