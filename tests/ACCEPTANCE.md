@@ -36,6 +36,16 @@ acceptance app gained a `package.json` (one real test, a lint script that exits 
 `BACKLOG.md` and an old `GRADE.md` in the repo for E6. Raw files are in `acceptance-0.1.1/raw/`
 in the scratch workspace.
 
+**0.1.2 criteria, recorded 2026-09-23 against kit 0.1.1 (test-first):** 2 new criteria (P6, T1)
+from issue #14: **0 pass, 2 fail**. Pending the 0.1.2 fixes; T1 is checked from the file, and P6 must
+pass on a headless build-plan re-run.
+
+**0.1.2 re-run, 2026-09-23, kit 0.1.2 (unreleased):** **2 pass, 0 fail**. T1 passes from the file, and P6
+passes on a headless build-plan run against the signed 0.1.1 record (dry run only, nothing filed).
+P1 and P4 were re-checked and pass. Review then found that a term decided only by a ruling story (C85) was reported as
+"none missing". After a fix, P6 was re-run and passes, with C85 listed as "pending ruling, no test yet". Raw files are in
+`acceptance-0.1.2/raw/` in the scratch workspace.
+
 How it was run: headless `claude -p` 2.1.280 with `--plugin-dir <kit>`,
 `--setting-sources project`, `--strict-mcp-config`, auto-memory off, a narrow
 `--allowedTools` list per step, and `--resume` for multi-turn skills. It ran in a
@@ -96,13 +106,14 @@ in this repo.
 
 ## build-plan
 
-Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
+Numbered P1–P6 so they don't collide with design-record terms (C1, C2, …).
 
 - **P1** Refuses (a) a record with a blank Approval row and (b) a record with a complete Approval row but one unsigned drift row; accepts a fully signed record.
 - **P2** Shows the plan and waits for approval.
 - **P3** Every story names a gate or `register` (enforced by `file-plan.mjs --check`).
 - **P4** `--dry-run` prints calls and files nothing.
 - **P5** Re-run files nothing new.
+- **P6** Every story that implements a design term has a done-when that requires its tests to name the term id (`C<n>`, or `<Feature> C<n>` with several records). Observable from the plan preview or `plan.json`.
 
 | Date | Kit version | Criterion | Pass/Fail | Evidence |
 |---|---|---|---|---|
@@ -111,6 +122,11 @@ Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
 | 2026-09-23 | 0.1.0 (unreleased) | P3 | Pass | `file-plan.mjs plan.json --check` → `plan OK …`, exit 0. On GitHub: 40 issues (6 epics, 34 stories), every story labelled `gate:*` or `register`, none both. `56-p3-check.txt`, `56-p3-labels.json` |
 | 2026-09-23 | 0.1.0 (unreleased) | P4 | Pass | Dry run printed 71 writes (13 labels, 4 milestones, 40 issues, 14 body edits). Afterwards: `gh issue list` → 0 issues, 0 milestones, no kit labels. `54-bp-t3-dryrun.json`, `.transcript.jsonl` |
 | 2026-09-23 | 0.1.0 (unreleased) | P5 | Pass | The same `--apply` run again: 40 × `unchanged`, no created or updated lines; still 40 issues and 4 milestones. The skill's own Bash calls held no direct `gh issue create`, `gh label` or milestone POST. `57-p5-reapply.txt`, `55-bp-t4-apply.transcript.jsonl` |
+| 2026-09-23 | 0.1.1 | P6 | Fail | Evidence is the 0.1.0 run's plan (`acceptance/raw/plan.json`, preview `52-bp-t1.json`): the 0.1.1 re-run did not re-run build-plan. It holds for 0.1.1 because `git diff v0.1.0-rc.1 v0.1.1 -- skills/build-plan/SKILL.md templates/CLAUDE.md` is empty. Of 34 stories, 25 cite a term id in `doneWhen`; none requires tests to name it (the only "name" hit, KGF.S31, is about masking people's names). The ids appear only as references to the term, for example KGF.S03: "Unit tests pass showing: the signature is the 5 most frequent terms after lowercasing and stop-word removal, sorted (C6); frequency ties break alphabetically (C7); a note with fewer than 5 terms uses the terms it has (C8)." Tests written to that done-when can pass without naming C6–C8, and then grade's `design.terms-tested` counts those terms as untested |
+| 2026-09-23 | 0.1.2 (unreleased) | P1 | Pass | The signed 0.1.1 record (§9 complete, drift row C31 signed) was accepted: "§9 has a complete row, and the only §10 drift row … has Signed by filled in". It then read the board, drafted `../plan.json`, ran `--check` (`plan OK: 4 milestones, 8 epics, 43 stories (39 gated, 4 register)`) and showed the preview. `acceptance-0.1.2/raw/10-bp-t1.json` |
+| 2026-09-23 | 0.1.2 (unreleased) | P4 | Pass | "approve" → "Dry run first (recommended), or apply now?" → "dry run": `file-plan.mjs ../plan.json --dry-run` planned 66 writes (51 issue creates, 15 body edits; no labels or milestones needed) and filed nothing. Board before and after: 40 issues and 4 milestones. Not applied. `11-bp-t2.json`, `12-bp-t3-dryrun.json`, `00-before-counts.txt`, `13-after-counts.txt` |
+| 2026-09-23 | 0.1.2 (unreleased) | P6 | Pass | Headless build-plan on kit `fix/issue-14` against the signed 0.1.1 KnowledgeGapFinder record (98 terms). In `plan.json`, all 36 stories that cite term ids and build something ask for tests named with those ids. The 7 that cite an id without it are rule-on-OPEN stories, which the skill exempts (S11, S12, S13, S21, S28, S31, S37). Examples: S02 "Unit tests named C8, C9, C10, C11 and C12 pass, showing …"; S23 "on the PDI, tests named C30, C31 and C32 fire Draft from several sessions at once …"; S33 "on the PDI, tests named C69, C70, C71, C72, C73 and C75 show an author can't approve their own draft …". 97 of 98 terms are asked to be named. The exception is C85 (OPEN, the 60% target), which has only a register ruling story. The preview names C85 as the one OPEN term without a build story ("C85 stays in the register"), but its coverage line says "none missing" rather than listing C85 as a term no test is asked to name. `plan.json`, `P6-analysis.txt`, `10-bp-t1.json` |
+| 2026-09-23 | 0.1.2 (unreleased) | P6 | Pass | Re-run after the fix `fix: build-plan — ruled-only OPEN terms need a build story and show as pending`, same signed record, fresh workspace, dry run only (40 issues and 4 milestones before and after). The preview's coverage line: "C1–C98 are all asked for by term-named tests except **C85: pending ruling, no test yet** (its only story is the ruling in S32)." C85's ruling story KGF.S32 (register): "C85 has a signed drift-log ruling naming where and over what sample the target is measured. If the term is kept, a build story whose tests name C85 is filed after the ruling." The other five ruling stories name their build story, for example S38: "If the term is kept, a build story whose tests name C55 exists: {{KGF.S39}}, which depends on this story." Every story that builds a term asks for tests named with its ids; none cites an id without it. This time the plan reused the old `KGF.*` keys: 36 updates, 5 creates, 6 fill-ins (47 writes). `acceptance-0.1.2/raw/20-bp2-t1.json`, `22-bp2-t3-dryrun.json`, `plan2.json`, `P6-analysis-2.txt` |
 
 ## grade
 
@@ -193,3 +209,12 @@ For F2 and F4, Pass means the sabotaged suite failed, as it must.
 | 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | Rerun after the same change: `validatePlan` made to start with `return [];`: 40 tests, 26 pass, 14 fail. Restored with `git checkout -- skills/build-plan/file-plan.mjs`: 40 pass, 0 fail. |
 | 2026-09-23 | 0.1.0 (unreleased) | F3 | Pass | Rerun after opt-in `--reopen` was added: `node --test tests/*.test.mjs` on Node v26.5.0: 45 tests, 45 pass, 0 fail. |
 | 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | Rerun after the same change: `validatePlan` made to start with `return [];`: 45 tests, 31 pass, 14 fail. Second sabotage, the reopen call disabled (`if (false && reopen && …)`): 45 tests, 43 pass, 2 fail (the reopen test and the dry-run reopen test). Restored from a copy: 45 pass, 0 fail. |
+
+## templates
+
+- **T1** The starter session protocol (`templates/CLAUDE.md`) tells the builder that every test names the design term it proves, using grade's own definition (the term id as a whole word, `C<n>`, or `<Feature> C<n>` with several records, in a test's name or in a test file).
+
+| Date | Kit version | Criterion | Pass/Fail | Evidence |
+|---|---|---|---|---|
+| 2026-09-23 | 0.1.1 | T1 | Fail | `grep -n -i -E 'term\|test\|C[0-9]' templates/CLAUDE.md` → no output, exit 1: the protocol has no testing rule at all, and never mentions design terms or term ids. Unchanged since 0.1.0-rc.1 (`git diff v0.1.0-rc.1 v0.1.1 -- templates/CLAUDE.md` is empty) |
+| 2026-09-23 | 0.1.2 (unreleased) | T1 | Pass | `templates/CLAUDE.md` gains `## Tests` (line 65). Line 67: "Every test names the design term it proves, as a whole word at the start of its name, e.g. `C3: policy can raise risk, never lower it` (with several design records: `<Feature> C3: …`)." Lines 69–72 state the same rule as grade's definition (whole-word id, `C<n>` / `<Feature> C<n>`, in a test's name or in a test file): "Grade counts a term as tested only when its id appears as a whole word (`C<n>`, or `<Feature> C<n>` with several records) in a test's name or in a test file." (`skills/grade/SKILL.md`, `design.terms-tested` row). Fix commit a8d01e0 `fix: session protocol — tests name the design term they prove` |

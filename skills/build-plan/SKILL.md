@@ -72,6 +72,19 @@ Arguments given: `$ARGUMENTS` (may be empty).
      `doneWhen` of a story on that gate. Out-of-scope items become `register`
      stories or nothing; never gated work. `honestLimit` says what passing the
      story does **not** prove.
+   - **Term stories ask for term-named tests.** Every story that implements
+     one or more terms says in its `doneWhen` that its tests name those term
+     ids, using the actual ids: `C<n>`, or `<Feature> C<n>` when the repo has
+     several design records. For example `"doneWhen": "Unit tests named C6,
+     C7 and C8 pass, showing …"`, or, for an on-instance check, `"On the PDI,
+     tests named C11 and C12 show …"`. Grade counts a term as tested only when
+     its id appears as a whole word in a test's name or in a test file, so a
+     `doneWhen` that only cites `(C6)` is not enough. A story that only rules
+     on an `OPEN` term (a signed drift-log ruling, no code) is exempt, but
+     only that ruling story: its `doneWhen` also says "if the term is kept, a
+     build story whose tests name C<n> exists (added to this plan via
+     `dependsOn`, or filed after the ruling)". The story that builds the term
+     carries the test requirement.
    - Reference other stories in a body as `{{KEY}}`; the script resolves them
      to issue numbers.
 5. **Where `plan.json` lives.** Write it in the workspace (`../plan.json`
@@ -86,8 +99,11 @@ Arguments given: `$ARGUMENTS` (may be empty).
    | Key | Title | Epic | Milestone | Gate / register | Priority | Size | Depends on | Done when |
    |---|---|---|---|---|---|---|---|---|
 
-   List which term each story covers, and any term or pass criterion with no
-   story. Then say: "Reply 'approve' to file this, or tell me what to change."
+   List which term each story covers and any term or pass criterion with no
+   story. The coverage line lists every term that no story's `doneWhen` asks
+   tests to name. OPEN terms whose only story is a ruling are listed there
+   separately, as "pending ruling — no test yet". Never say "none missing"
+   while such a term exists. Then say: "Reply 'approve' to file this, or tell me what to change."
    End your turn. File nothing until the person approves.
 8. **Dry run or apply.** On "approve", ask: "Dry run first (recommended), or
    apply now?" If dry run: run
@@ -119,6 +135,10 @@ Arguments given: `$ARGUMENTS` (may be empty).
 - Never file without the person's explicit approval of the preview.
 - Every story names exactly one gate, or `register`. Register stories have
   no milestone and no priority.
+- Every story that implements a term has a `doneWhen` requiring its tests to
+  name that term id (`C<n>`, or `<Feature> C<n>` with several records).
+- A term with only a ruling story is "pending ruling — no test yet" in the
+  preview, and the ruling story requires a build story with term-named tests if the term is kept.
 - File only through `file-plan.mjs`. Never call `gh` to create or edit issues,
   labels or milestones directly.
 - Milestones are gate boundaries, never calendar dates.
