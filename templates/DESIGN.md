@@ -1,7 +1,5 @@
 # Design record: <Feature>
 
-Status: DRAFT | SIGNED | NEEDS RE-SIGNING
-
 ## 1. Summary
 
 What is being built and why, in three lines.
@@ -23,7 +21,7 @@ Each table, the code that owns writes to it, and the roles that can read or chan
 | Table | Owner of writes | Roles |
 |---|---|---|
 
-## 5. Failure modes
+## 5. Failure modes and how each is handled
 
 Each way it can fail and how that failure is handled.
 
@@ -48,7 +46,7 @@ One row per gate this feature touches. Pass criteria use numbers where possible.
 
 ## 9. Approval
 
-A person fills this in. The record is unsigned until a row is complete.
+A person fills this in; a skill never does. The record is signed only when this table has a complete row and every drift-log row has Signed by filled in. Otherwise it is unsigned.
 
 | Name | Role | Date | Signature |
 |---|---|---|---|
@@ -56,7 +54,7 @@ A person fills this in. The record is unsigned until a row is complete.
 
 ## 10. Drift log
 
-Every change to a term after signing. Any row here marks the record for re-signing.
+Every change to a term after signing. `amend` adds a row with Signed by left blank, which marks the record for re-signing until a person fills it in.
 
 | Date | Term | Ruling | Signed by |
 |---|---|---|---|
