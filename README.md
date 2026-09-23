@@ -23,7 +23,9 @@ In Claude Code:
 /plugin install prove-it@prove-it
 ```
 
-Then work through [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md).
+Then work through [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md). The pre-commit
+guard is installed separately from a local clone of this repo (`git clone`
+it anywhere; see The guard).
 
 ## The five commands
 
@@ -31,9 +33,9 @@ Then work through [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md).
 |---|---|---|---|
 | `/prove-it:consult [brief]` | The brief (default: the single file in `brief/`) | `CONSULT.md` in the workspace root | Write anything before you confirm its restatement of the brief |
 | `/prove-it:design-challenge [consult]`<br>`/prove-it:design-challenge amend [record]` | `./CONSULT.md`, else `../CONSULT.md`; the kit's `DESIGN.md` template. `amend` reads the existing record | `docs/DESIGN-<Feature>.md`. `amend` adds or changes terms, with one unsigned drift-log row for each | Sign the record, or fill in any Signed by cell |
-| `/prove-it:build-plan [record]` | A signed `docs/DESIGN-*.md` (here, else `../docs/`); the live GitHub board | `plan.json` in the workspace; labels, milestones, epics and stories on GitHub (through `file-plan.mjs`); `BACKLOG.md` | File from an unsigned record, or file without your approval |
-| `/prove-it:grade [milestone]` | The repo, its design records, the board; runs the build and tests | `GRADE.md` at the repo root; a remediation plan in `../plan-grade.json`, filed only on approval (which also rewrites `BACKLOG.md`) | Install to an instance without asking, or claim a check it didn't run |
-| `/prove-it:handoff`<br>`… plant` · `… diagnose [symptom]` · `… verdict` | `src/`, the design records and the templates. `diagnose` reads **only** `RUNBOOK.md` | `RUNBOOK.md` and a `HANDOFF.md` draft; `plant` writes a numbered drill card and `diagnose` writes numbered drill notes, both in the workspace; `verdict` writes the final `HANDOFF.md` | Soften the verdict. It also never plants or restores anything on an instance itself |
+| `/prove-it:build-plan [record]` | A signed `docs/DESIGN-*.md` (here, else `../docs/`); the live GitHub board | `plan.json` in the workspace; labels, milestones, epics and stories on GitHub (through `file-plan.mjs`); `BACKLOG.md` | File from an unsigned record (or without your approval) |
+| `/prove-it:grade [milestone]` | The repo, its design records, the board; runs the build and tests | `GRADE.md` at the repo root; a remediation plan in `../plan-grade.json`, filed only on approval (which also rewrites `BACKLOG.md`) | Claim a check it didn't run (and it asks before installing) |
+| `/prove-it:handoff`<br>`… plant` · `… diagnose [symptom]` · `… verdict` | `src/`, the design records and the templates. `diagnose` reads **only** `RUNBOOK.md` | `RUNBOOK.md` and a `HANDOFF.md` draft; `plant` writes a numbered drill card and `diagnose` writes numbered drill notes, both in the workspace; `verdict` writes the final `HANDOFF.md` | Soften the verdict |
 
 Each command ends by naming the next one.
 
@@ -58,7 +60,7 @@ Each command ends by naming the next one.
 - a staged file is not admitted by the `.gitignore` allowlist (for example, it
   was force-added);
 - an added line looks like a secret: a private key block, a GitHub token, an
-  API key of the common `sk-` kinds, an AWS access key id, a Slack token, a URL
+  AI-provider API key, an AWS access key id, a Slack token, a URL
   with a user name and password in it, or the kit's own test marker;
 - an added line matches one of your own patterns (your hostname, your email)
   in `.prove-it/patterns`. These are matched ignoring case, and the file is
@@ -106,8 +108,8 @@ It is a seatbelt, not a vault: see Honest limits.
   It doesn't scan binary files, and it can't handle file names that contain a
   newline. It only knows the secret shapes it lists. Keep a full history scan
   (for example gitleaks) before you publish a repo.
-- The guard can also block things that aren't secrets: a CSS-style name
-  starting `.sk-` looks like an API key to it. It fails closed.
+- The guard can also block things that aren't secrets: a CSS class name
+  that happens to share an API key's prefix looks like a key to it. It fails closed.
 - **Listing limits.** The filer and the skills read at most 5000 issues. If
   the listing is full, they stop instead of risking duplicates. Milestones are
   read in full, page by page.
@@ -123,6 +125,8 @@ It is a seatbelt, not a vault: see Honest limits.
   `marketplace.json`), and nothing checks that they agree.
 - `templates/DESIGN.md` has no components section, so the handoff's coverage
   check traces each record through terms and sections only.
+- The runbook's `Symptom → cause index` heading has an awkward anchor
+  (`#symptom--cause-index`); link to it by heading text, not anchor.
 - These are tracked in issue #3.
 
 ## Versions
