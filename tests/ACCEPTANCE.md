@@ -5,9 +5,12 @@ against `tests/fixtures/sample-brief.md`, in a scratch workspace. Record every
 run below with its date and kit version. A criterion that was not run is not
 recorded as a pass.
 
-**Honest limit:** on the sample-brief dry run there is no real app, so grade and
-handoff criteria that need one (D1–D6, and E3–E5 where applicable) are recorded
-as unverified, not pass. They are only fully proven on a real app.
+**Honest limit:** the sample-brief dry run has no real app. Criteria that can't
+be run without one (D1, D4, D5, D6, E1, E2) are recorded as unverified, never
+pass; they are only proven on a real app. Criteria that can be run on the dry
+run (D2 asks before installing, D3 reports unverified, E3 plant, E4 diagnose
+refuses and proceeds with only the runbook, E5 NOT READY names the item) are
+recorded as pass or fail from what actually happened.
 
 ## consult
 
