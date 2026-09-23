@@ -1,0 +1,20 @@
+# Allowlist: nothing is tracked unless admitted below (principle 12).
+/*
+!/.gitignore
+!/.github/
+!/.claude-plugin/
+!/skills/
+!/templates/
+!/hooks/
+!/docs/
+!/tests/
+!/README.md
+!/LICENSE
+!/CHANGELOG.md
+!/package.json
+
+# Never track, even inside admitted folders:
+.prove-it/
+drill-card*.md
+.DS_Store
+node_modules/
