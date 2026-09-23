@@ -110,9 +110,9 @@ Arguments given: `$ARGUMENTS` (may be empty).
    deterministic so a re-grade updates instead of duplicating: epic
    `grade.<gate>` and stories `grade.<gate>.<criterion id>`, where `<gate>` is
    the milestone's gate name (never its title). Keys use only letters, digits
-   and `_ . -`. Write it in the workspace (`../plan-grade.json`), never in the
-   repo, and run
-   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "../plan-grade.json" --check`.
+   and `_ . -`. Write it in the workspace, at
+   `"$(git rev-parse --show-toplevel)/../plan-grade.json"` (next to the repo, never in it), and run
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "$(git rev-parse --show-toplevel)/../plan-grade.json" --check`.
 10. **Write `GRADE.md` now**, at the repo root (sections under Output), with
     Remediation marked "proposed, not filed". If `.gitignore` has no
     `!/GRADE.md` line, append it at the end. Don't commit. Tell the person to
@@ -120,11 +120,12 @@ Arguments given: `$ARGUMENTS` (may be empty).
 11. **Stop for approval.** Show the remediation preview table and end your
     turn. On "approve", ask: "Dry run first (recommended), or apply now?" If
     dry run: run
-    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "../plan-grade.json" --dry-run`,
+    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "$(git rev-parse --show-toplevel)/../plan-grade.json" --dry-run --reopen`,
     show the count of writes, and stop for "apply".
 12. **Only after "apply"** (or "apply now"), run
-    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "../plan-grade.json" --apply --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`.
-    File only through the filer; it also rewrites `BACKLOG.md` from the open
+    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "$(git rev-parse --show-toplevel)/../plan-grade.json" --apply --reopen --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`.
+    `--reopen` is there so that a criterion that regresses reopens its earlier
+    issue instead of hiding in a closed one. File only through the filer; it also rewrites `BACKLOG.md` from the open
     issues. After a successful apply, update only the Remediation section of
     `GRADE.md` with the issue numbers.
 
@@ -144,6 +145,9 @@ Arguments given: `$ARGUMENTS` (may be empty).
 5. **Forecast** — score if the remediation is done, caps released, caps left.
 6. **Remediation** — the epic and its stories: "proposed, not filed", or,
    after apply, the issue numbers.
+
+The remediation plan is `"$(git rev-parse --show-toplevel)/../plan-grade.json"`:
+in the workspace, next to the repo, never committed.
 
 ## Rules you can't break
 
