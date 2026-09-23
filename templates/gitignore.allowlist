@@ -1,0 +1,15 @@
+# Allowlist .gitignore (prove-it). Nothing is tracked unless admitted below.
+# Why: a blocklist has to predict every shape a leak can take; an allowlist
+# only has to know what this repo is for.
+#
+# To admit a new file or folder, add ONE line, on purpose, when you first need it:
+#   !/path/to/file.md      a single file at the root
+#   !/folder/              a folder (and everything inside it)
+/*
+!/.gitignore
+!/README.md
+!/src/
+!/package.json
+!/package-lock.json
+!/now.config.json
+!/tsconfig.json

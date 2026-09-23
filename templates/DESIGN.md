@@ -1,0 +1,62 @@
+# Design record: <Feature>
+
+Status: DRAFT | SIGNED | NEEDS RE-SIGNING
+
+## 1. Summary
+
+What is being built and why, in three lines.
+
+## 2. Context
+
+Link to CONSULT.md and other sources by reference. Never paste them in.
+
+## 3. Terms
+
+Numbered C1, C2, … Each term is a single rule that a test or a person can check.
+
+- C1:
+
+## 4. Data and ownership
+
+Each table, the code that owns writes to it, and the roles that can read or change it.
+
+| Table | Owner of writes | Roles |
+|---|---|---|
+
+## 5. Failure modes
+
+Each way it can fail and how that failure is handled.
+
+| Failure | Handling |
+|---|---|
+
+## 6. Security and access
+
+Roles, ACLs, scope boundaries and what data leaves the instance.
+
+## 7. Gates
+
+One row per gate this feature touches. Pass criteria use numbers where possible.
+
+| Gate | Pass criteria |
+|---|---|
+
+## 8. Rejected alternatives
+
+| Option | Why rejected |
+|---|---|
+
+## 9. Approval
+
+A person fills this in. The record is unsigned until a row is complete.
+
+| Name | Role | Date | Signature |
+|---|---|---|---|
+| | | | |
+
+## 10. Drift log
+
+Every change to a term after signing. Any row here marks the record for re-signing.
+
+| Date | Term | Ruling | Signed by |
+|---|---|---|---|
