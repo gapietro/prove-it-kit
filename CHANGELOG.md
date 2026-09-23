@@ -2,6 +2,8 @@
 
 ## 0.1.1 — 2026-09-23 (private)
 
+Acceptance notes: B6 passes on a question count (each read-back counts as its turn's one question); two turns still join close asks. B7 passes on the final file after one self-corrected write. Both are tracked in #3.
+
 Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
 
 - `design-challenge` ends every turn with exactly one question, even when

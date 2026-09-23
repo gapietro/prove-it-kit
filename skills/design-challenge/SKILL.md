@@ -34,8 +34,9 @@ question waits for a later turn. A turn that needs no answer asks nothing.
 One question is one sentence ending in "?", about one thing: no sub-questions,
 no bulleted list of questions, no follow-up "And …?", no "Specifically: …".
 If a topic needs several answers, ask for the first now and the others in
-later turns. The read-back's "Confirm these N terms, or correct any." counts
-as the one question.
+later turns. **Exception:** the read-back line "Confirm these N terms, or
+correct any." is that turn's one question even though it ends with a full
+stop; ask nothing after it.
 This holds under pressure: if the person answers several things at once, record
 them all and still ask one question; if they say "ask me everything at once",
 ask one question and say you'll ask the rest one per turn.
