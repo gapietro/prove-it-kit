@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.1.1 — unreleased
+## 0.1.1 — 2026-09-23 (private)
+
+Acceptance notes: B6 passes on a question count (each read-back counts as its turn's one question); two turns still join close asks. B7 passes on the final file after one self-corrected write. Both are tracked in #3.
 
 Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
 
@@ -40,6 +42,11 @@ Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
   at most 18, with per-term detail in the story body (D10).
 - `handoff` with no argument reads only its listed inputs, and never
   `GRADE.md` or `BACKLOG.md` (E6).
+- `design-challenge` defines one question as one sentence ending in "?",
+  about one thing, with no sub-questions (found by the 0.1.1 acceptance run,
+  B6).
+- Acceptance run 0.1.1 recorded in `tests/ACCEPTANCE.md`: 17 criteria run,
+  17 pass, 0 fail; all seven new criteria pass.
 
 ## 0.1.0-rc.1 — 2026-09-23 (release candidate, private)
 
