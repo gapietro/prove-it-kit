@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1 — unreleased
+## 0.1.1 — 2026-09-23 (private)
 
 Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
 
