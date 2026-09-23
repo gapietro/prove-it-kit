@@ -67,6 +67,16 @@ expect_block "API key shape is blocked"         src/app.js "$(printf 'const k = 
 expect_pass  "kebab-case names pass"            src/app.css '.x { mask-image-linear-gradient: none; } /* risk-assessment-service-module */'
 expect_pass  "lowercase look-alikes pass"       src/app.js 'const s = "akiaabcdefghijklmnop";'
 
+# Non-ASCII file names (git quotes them unless core.quotePath=false); \303\251 is 'é'
+CAFE=$(printf 'src/caf\303\251.js')
+expect_pass  "clean non-ASCII file name passes" "$CAFE" 'export const x = 1;'
+new_repo
+printf 'FAKE\137TOKEN\075do-not-use-0000\n' > "$R/$CAFE"
+git -C "$R" add -- .gitignore "$CAFE"
+if git -C "$R" commit -q -m t > "$R.out" 2>&1; then bad "secret in a non-ASCII file name is blocked (commit was allowed)"
+elif grep -q 'look like a secret' "$R.out"; then ok "secret in a non-ASCII file name is blocked"
+else bad "secret in a non-ASCII file name is blocked (blocked, but not scanned: $(head -1 "$R.out"))"; fi
+
 # Local patterns from .prove-it/patterns
 new_repo
 mkdir -p "$R/.prove-it"; printf '# comment\nmy-instance-name\n' > "$R/.prove-it/patterns"

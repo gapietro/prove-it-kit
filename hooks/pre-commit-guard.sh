@@ -43,14 +43,15 @@ check_patterns() {
 check_patterns "$tmp/builtin" "the guard's built-in list"
 check_patterns "$tmp/local" ".prove-it/patterns"
 
-git diff --cached --name-only --diff-filter=ACMR > "$tmp/files"
+# quotePath=false keeps non-ASCII names literal. Known limit: names containing newlines.
+git -c core.quotePath=false diff --cached --name-only --diff-filter=ACMR > "$tmp/files"
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   if git check-ignore -q --no-index -- "$f"; then
     printf 'BLOCKED: %s is not admitted by the .gitignore allowlist (force-added?).\n' "$f" >&2
     blocked=1
   fi
-  git diff --cached -U0 --no-color -- "$f" | grep '^+' | grep -v '^+++' > "$tmp/added"
+  git -c core.quotePath=false diff --cached -U0 --no-color -- "$f" | grep '^+' | grep -v '^+++' > "$tmp/added"
   n=$(grep -c -E -f "$tmp/builtin" "$tmp/added")
   if [ -s "$tmp/local" ]; then
     n=$((n + $(grep -c -i -E -f "$tmp/local" "$tmp/added")))
