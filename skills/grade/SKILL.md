@@ -92,8 +92,10 @@ Arguments given: `$ARGUMENTS` (may be empty).
    - `code.build` fail or unverified, `code.tests` fail, or `ready.secrets`
      fail → cap 49;
    - `ready.install` not pass at a milestone whose gate is install or later;
-     or any `design.missing`, `design.<F>.signed`, `code.<F>.C<n>.test`,
-     `ready.ai.<call>`, `code.oob` or `ready.<F>.<gate>.<row>` fail → cap 74.
+     or any `design.missing`, `design.<F>.signed`, `ready.ai.<call>` or
+     `code.oob` fail; or any `code.<F>.C<n>.test` or `ready.<F>.<gate>.<row>`
+     fail **or unverified** → cap 74. A term with no test is itself a fail. A
+     gate criterion that wasn't run is unverified, and it still caps.
    Final score = min(computed score, lowest cap). Bands: 90–100 ready to ship
    the gate; 75–89 ready with named fixes; 50–74 not ready (blocked); 0–49
    broken. A cap can't be averaged away, and no strength elsewhere lifts it.
@@ -110,7 +112,7 @@ Arguments given: `$ARGUMENTS` (may be empty).
    the milestone's gate name (never its title). Keys use only letters, digits
    and `_ . -`. Write it in the workspace (`../plan-grade.json`), never in the
    repo, and run
-   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "<plan.json>" --check`.
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "../plan-grade.json" --check`.
 10. **Write `GRADE.md` now**, at the repo root (sections under Output), with
     Remediation marked "proposed, not filed". If `.gitignore` has no
     `!/GRADE.md` line, append it at the end. Don't commit. Tell the person to
@@ -118,10 +120,10 @@ Arguments given: `$ARGUMENTS` (may be empty).
 11. **Stop for approval.** Show the remediation preview table and end your
     turn. On "approve", ask: "Dry run first (recommended), or apply now?" If
     dry run: run
-    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "<plan.json>" --dry-run`,
+    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "../plan-grade.json" --dry-run`,
     show the count of writes, and stop for "apply".
 12. **Only after "apply"** (or "apply now"), run
-    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "<plan.json>" --apply --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`.
+    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs "../plan-grade.json" --apply --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`.
     File only through the filer; it also rewrites `BACKLOG.md` from the open
     issues. After a successful apply, update only the Remediation section of
     `GRADE.md` with the issue numbers.
