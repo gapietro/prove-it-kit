@@ -32,20 +32,20 @@ Per-term checks feed a single criterion as a coverage ratio, so a design with
 | Design | `design.signed` | At least one design record exists in the repo, and every design record is signed (template §9 rule). No record in the repo is a fail, with the reason "missing" |
 | Design | `design.terms-tested` | 100% of terms are named by at least one test: the term id as a whole word (`C<n>`, or `<Feature> C<n>` when there are several records) in a test's name or in a test file; shown as `n of m` |
 | Design | `design.gates-evidenced` | 100% of §7 pass criteria for gates at or before the milestone have evidence: a check run in this grade, or a closed issue or PR recording the result, cited. Anything else counts as missing; `n of m` |
-| Design | `design.failure-modes` | Every §5 failure mode has a handling term or test |
+| Design | `design.failure-modes` | Every §5 failure mode has a handling term or test; cite the term or test for each §5 row |
 | Design | `design.drift-ruled` | Every table, role, ACL, property and script include declared in `src/*.now.ts` appears in the record (§3, §4 or §6) or in a signed §10 row; each that doesn't is listed with file:line |
 | Design | `design.no-open` | No `OPEN` in §1–§8 of any design record |
 | Code quality | `code.build` | The build (`npm run build` if there is a `build` script, else `now-sdk build`) passes by the verdict rule (§3) |
-| Code quality | `code.tests` | The `test` script passes by the verdict rule |
+| Code quality | `code.tests` | The `test` script passes by the verdict rule; a test script that makes no assertions is not evidence: unverified |
 | Code quality | `code.lint` | The `lint` script passes by the verdict rule (unverified if there is none) |
 | Code quality | `code.oob` | Every declaration in `src/` whose table or target is outside the app's scope is listed with file:line; passes only if the list is empty or every entry extends rather than modifies. No list → unverified |
 | Code quality | `code.logic-off-instance` | The logic modules are named, shown not to reference `Glide*` or `gs`, and shown to be imported by `npm test` (exit 0); cited file:line |
 | Code quality | `code.secrets` | The tree and history scan clean (guard patterns; gitleaks if installed) |
 | Readiness | `ready.install` | `now-sdk install --auth <alias>` succeeds (asked first) |
 | Readiness | `ready.real-user` | A cited test, issue or PR comment shows a check done as a non-admin role; otherwise unverified |
-| Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off |
+| Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off; cite the property or setting for the rate limit, budget and off switch, file:line |
 | Readiness | `ready.config-documented` | Every property and role declared in `src/` is listed with its purpose in `README.md`, `CLAUDE.md` or `RUNBOOK.md`; the design record doesn't count |
-| Readiness | `ready.demo-honest` | Demo data is seeded; no real records |
+| Readiness | `ready.demo-honest` | Demo data is seeded; no real records; cite the seed records in `src/` |
 | Readiness | `ready.gate-clear` | Zero open blockers for the milestone's gate |
 
 A pass needs evidence of the kind the row names. Without it the row is

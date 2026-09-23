@@ -91,20 +91,20 @@ Arguments given: `$ARGUMENTS` (may be empty).
    | Design | `design.signed` | At least one design record exists in the repo, and every design record is signed: apply the signing rule in `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md` §9 exactly as written there. No record in the repo is a fail, with the reason "missing" (tell the person to move the record in from the workspace) |
    | Design | `design.terms-tested` | 100% of terms are named by at least one test: the term id as a whole word (`C<n>`, or `<Feature> C<n>` when there are several records) in a test's name or in a test file; shown as `n of m`, listing the terms not named |
    | Design | `design.gates-evidenced` | 100% of §7 pass criteria for gates at or before the milestone have evidence: a check run in this grade, or a closed issue or PR recording the result, cited. Anything else counts as missing; `n of m`, listing what is missing |
-   | Design | `design.failure-modes` | Every §5 failure mode has a handling term or test |
+   | Design | `design.failure-modes` | Every §5 failure mode has a handling term or test; cite the term or test for each §5 row |
    | Design | `design.drift-ruled` | Every table, role, ACL, property and script include declared in `src/*.now.ts` appears in a design record (§3, §4 or §6) or in a signed §10 row. List each that doesn't, with file:line |
    | Design | `design.no-open` | No `OPEN` in §1–§8 of any design record |
    | Code quality | `code.build` | The build command (step 2) passes by the verdict rule |
-   | Code quality | `code.tests` | `npm test` passes by the verdict rule |
+   | Code quality | `code.tests` | `npm test` passes by the verdict rule; a test script that makes no assertions is not evidence: unverified |
    | Code quality | `code.lint` | `npm run lint` passes by the verdict rule (unverified if there is no lint script) |
    | Code quality | `code.oob` | List every declaration in `src/` whose table or target is outside the app's scope, with file:line. Pass only if the list is empty or every entry extends rather than modifies. No list → unverified |
    | Code quality | `code.logic-off-instance` | Name the logic modules, show they don't reference `Glide*` or `gs`, and show that `npm test` (exit 0) imports them; cite file:line |
    | Code quality | `code.secrets` | The tree and history scan clean, by the secrets scan below. Never print the matched text |
    | Readiness | `ready.install` | `now-sdk install --auth <alias>` succeeds (asked first, step 3) |
    | Readiness | `ready.real-user` | A cited test, issue or PR comment shows a check done as a non-admin role; otherwise unverified |
-   | Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off |
+   | Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off; cite the property or setting for the rate limit, budget and off switch, file:line |
    | Readiness | `ready.config-documented` | Every property and role declared in `src/` is listed with its purpose in `README.md`, `CLAUDE.md` or `RUNBOOK.md`. The design record doesn't count |
-   | Readiness | `ready.demo-honest` | Demo data is seeded; no real records |
+   | Readiness | `ready.demo-honest` | Demo data is seeded; no real records; cite the seed records in `src/` |
    | Readiness | `ready.gate-clear` | Zero open blockers for the milestone's gate (the open gated issues counted in step 1) |
 
    **Secrets scan** (`code.secrets`). If gitleaks is installed, run
