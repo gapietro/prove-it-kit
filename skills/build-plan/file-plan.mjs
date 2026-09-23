@@ -142,13 +142,16 @@ export function listIssues(run, state, fields) {
   return list;
 }
 
-export function createFiler({ run, log = () => {}, verify = true }) {
+// reopen: when true, a plan item whose key matches a CLOSED issue reopens it.
+// Off by default, so re-applying a build plan never reopens finished stories;
+// grade turns it on so a regressed criterion shows up as open work again.
+export function createFiler({ run, log = () => {}, verify = true, reopen = false }) {
   const json = (args) => JSON.parse(run(args) || 'null');
   return {
     apply(plan) {
       const repo = json(['repo', 'view', '--json', 'nameWithOwner']).nameWithOwner;
       // List issues before any write, so a refusal leaves the repo untouched.
-      const existing = listIssues(run, 'all', 'number,title,body,labels,milestone');
+      const existing = listIssues(run, 'all', 'number,state,title,body,labels,milestone');
 
       // GitHub label names are case-insensitive (P0 and p0 are one label), so every
       // label name read back from GitHub is lowercased before comparing.
@@ -174,7 +177,7 @@ export function createFiler({ run, log = () => {}, verify = true }) {
       const current = new Map();
       for (const i of existing) {
         const m = MARKER_RE.exec(i.body ?? '');
-        if (m) current.set(m[1], { number: i.number, title: i.title, body: i.body,
+        if (m) current.set(m[1], { number: i.number, state: String(i.state ?? '').toLowerCase(), title: i.title, body: i.body,
           labels: new Set((i.labels ?? []).map((l) => l.name.toLowerCase())), milestone: i.milestone?.title ?? null });
       }
       const numbers = new Map([...current].map(([k, v]) => [k, v.number]));
@@ -204,6 +207,7 @@ export function createFiler({ run, log = () => {}, verify = true }) {
           if (it.milestone && c.milestone !== it.milestone) args.push('--milestone', it.milestone);
           if (!it.milestone && c.milestone) args.push('--remove-milestone');
           if (args.length > 3) { run(args); log(`updated ${it.key} #${c.number}`); } else log(`unchanged ${it.key} #${c.number}`);
+          if (reopen && c.state === 'closed') { run(['issue', 'reopen', String(c.number)]); log(`reopened ${it.key} #${c.number}`); }
         } else {
           const args = ['issue', 'create', '--title', it.title, '--body', body];
           for (const l of it.labels) args.push('--label', l);
@@ -273,7 +277,7 @@ export function backlogMarkdown(openIssues, now = new Date()) {
 
 export function dryRunner(real) {
   let n = 0;
-  const isWrite = (a) => (a[0] === 'label' && (a[1] === 'create' || a[1] === 'edit')) || (a[0] === 'issue' && (a[1] === 'create' || a[1] === 'edit'))
+  const isWrite = (a) => (a[0] === 'label' && (a[1] === 'create' || a[1] === 'edit')) || (a[0] === 'issue' && (a[1] === 'create' || a[1] === 'edit' || a[1] === 'reopen'))
     || (a[0] === 'api' && a.includes('-f'));
   return (args) => {
     if (!isWrite(args)) return real(args);
@@ -284,10 +288,12 @@ export function dryRunner(real) {
 
 export async function main(argv) {
   const [file, mode, ...rest] = argv;
-  const usage = () => { console.error('usage: file-plan.mjs <plan.json> --check | --dry-run | --apply [--backlog <path>]'); return 2; };
+  const usage = () => { console.error('usage: file-plan.mjs <plan.json> --check | --dry-run [--reopen] | --apply [--reopen] [--backlog <path>]'); return 2; };
   if (!file || !['--check', '--dry-run', '--apply'].includes(mode)) return usage();
   let backlogPath = 'BACKLOG.md';
+  let reopen = false;
   for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === '--reopen' && mode !== '--check') { reopen = true; continue; }
     if (rest[i] === '--backlog' && rest[i + 1] && !rest[i + 1].startsWith('--')) { backlogPath = rest[++i]; continue; }
     return usage();
   }
@@ -313,7 +319,7 @@ export async function main(argv) {
 
   const real = (args) => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const apply = mode === '--apply';
-  const { problems } = createFiler({ run: apply ? real : dryRunner(real), log: (m) => console.log(m), verify: apply }).apply(plan);
+  const { problems } = createFiler({ run: apply ? real : dryRunner(real), log: (m) => console.log(m), verify: apply, reopen }).apply(plan);
   if (problems.length) { console.error(`read-back failed:\n${problems.map((p) => `  - ${p}`).join('\n')}`); return 1; }
   if (apply) {
     const open = listIssues(real, 'open', 'number,title,labels');
