@@ -110,7 +110,12 @@ didn't run; handoff never softens a verdict, and `diagnose` never sees the card.
   update instead of duplicating. Milestones matched by title, labels created if
   missing.
 - **After filing:** replaces `{{KEY}}` references with issue numbers, reads every
-  issue back to confirm labels, writes `BACKLOG.md`.
+  issue back to confirm its owned labels match exactly, then writes `BACKLOG.md`
+  **from the open issues on GitHub** (not from the plan file), so closed work
+  drops out and a remediation-only plan adds to the backlog instead of replacing it.
+- **Owned labels:** `gate:*`, `register`, `p0`–`p2`, `size:*`. Re-runs add and
+  remove owned labels (and milestones) to match the plan; labels a person added
+  are left alone.
 - **Next gate** = the earliest gate, in the order merge → install → demo →
   handoff → publish, that still has open issues. **Blockers-to-gate** = open
   issues labelled `gate:<next gate>`, excluding `register`. `BACKLOG.md` shows

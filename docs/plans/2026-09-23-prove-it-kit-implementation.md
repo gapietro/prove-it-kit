@@ -6,7 +6,7 @@
 
 **Architecture:** A single-repo plugin + marketplace. Five skills are prompt files (`skills/<name>/SKILL.md`). The two jobs that must be exact are small zero-dependency scripts with tests: `skills/build-plan/file-plan.mjs` (validates a plan and files it on GitHub via `gh`) and `hooks/pre-commit-guard.sh` (blocks non-allowlisted files and secret shapes). Templates fix the shape of every file the skills hand to each other.
 
-**Verified before handoff (2026-09-23):** all code in Tasks 2–6 was extracted and run on Node 26: 21/21 filer tests and 8/8 guard tests pass; the sabotage runs fail as they should (guard: 6 of 8 fail; filer: 11 fail). Use `node --test tests/*.test.mjs` — a bare `tests/` directory argument fails on newer Node.
+**Verified before handoff (2026-09-23, after review fixes):** all code in Tasks 2–6 was extracted and run on Node 26: 27/27 filer tests and 12/12 guard tests pass; the sabotage runs fail as they should (guard: 8 of 12 fail; filer: 12 fail); the CLI runs through a symlink; the guard admits the kit's own docs, tests and source. Use `node --test tests/*.test.mjs` — a bare `tests/` directory argument fails on newer Node.
 
 **Tech Stack:** Claude Code plugins (skills), Node ≥ 18 (`node:test`, `node:child_process`; no npm dependencies), POSIX `sh`, `git`, GitHub CLI `gh`.
 
@@ -149,6 +149,9 @@ expect_block "GitHub token shape is blocked"    src/app.js "$(printf 'const t = 
 expect_block "private key header is blocked"    src/key.txt "$(printf -- '-----BEGIN RSA PRIVATE\040KEY-----')"
 expect_block "credentials in a URL are blocked" src/app.js "$(printf 'https://admin\072hunter22@example.invalid/x')"
 expect_block "force-added outside allowlist"    notes.txt 'meeting notes' -f
+expect_block "API key shape is blocked"         src/app.js "$(printf 'const k = "sk\055abcdefghijklmnopqrstuvwx1234";')"
+expect_pass  "kebab-case names pass"            src/app.css '.x { mask-image-linear-gradient: none; } /* risk-assessment-service-module */'
+expect_pass  "lowercase look-alikes pass"       src/app.js 'const s = "akiaabcdefghijklmnop";'
 
 # Local patterns from .prove-it/patterns
 new_repo
@@ -156,6 +159,15 @@ mkdir -p "$R/.prove-it"; printf '# comment\nmy-instance-name\n' > "$R/.prove-it/
 printf 'see my-instance-name\n' > "$R/src/app.js"
 git -C "$R" add -- .gitignore src/app.js
 if git -C "$R" commit -q -m t > "$R.out" 2>&1; then bad "local pattern is blocked (commit was allowed)"; else ok "local pattern is blocked"; fi
+
+# An invalid local pattern must fail closed, not open
+new_repo
+mkdir -p "$R/.prove-it"; printf 'foo(\n' > "$R/.prove-it/patterns"
+printf 'harmless\n' > "$R/src/app.js"
+git -C "$R" add -- .gitignore src/app.js
+if git -C "$R" commit -q -m t > "$R.out" 2>&1; then bad "invalid local pattern fails closed (commit was allowed)"
+elif grep -qi 'invalid pattern' "$R.out"; then ok "invalid local pattern fails closed"
+else bad "invalid local pattern fails closed (blocked without explanation)"; fi
 
 printf '\n%s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
@@ -181,6 +193,7 @@ Expected: FAIL — `cp` can't find `hooks/pre-commit-guard.sh`, so every case re
 # prove-it pre-commit guard.
 # Blocks (1) staged files the .gitignore allowlist doesn't admit (for example,
 # force-added with `git add -f`) and (2) added lines that look like secrets.
+# Fails closed: if a pattern is invalid, nothing is committed.
 # Install:
 #   cp <kit>/hooks/pre-commit-guard.sh "$(git rev-parse --git-path hooks)/pre-commit"
 #   chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
@@ -189,22 +202,37 @@ blocked=0
 tmp=$(mktemp -d) || exit 1
 trap 'rm -rf "$tmp"' EXIT
 
-# Secret shapes. Each is written so this file's own text can't match it.
-cat > "$tmp/patterns" <<'PATTERNS'
+# Built-in secret shapes, matched case-sensitively. Each is written so this
+# file's own text can't match it.
+cat > "$tmp/builtin" <<'PATTERNS'
 -----BEGIN [A-Z ]*PRIVATE KEY-----
 (ghp|gho|ghs|ghu|ghr|github_pat)_[A-Za-z0-9_]{20,}
-sk-[A-Za-z0-9_-]{20,}
+(^|[^A-Za-z0-9_-])sk-(proj-)?[A-Za-z0-9_]{20,}
 AKIA[0-9A-Z]{16}
 xox[abprs]-[A-Za-z0-9-]{10,}
 https?://[^/[:space:]:@]+:[^/[:space:]@]+@
 FAKE_TOKEN[=]do-not-use-
 PATTERNS
 
-# Local patterns (your hostname, your email): .prove-it/patterns, never committed.
+# Local patterns (your hostname, your email), matched case-insensitively:
+# .prove-it/patterns, never committed.
 root=$(git rev-parse --show-toplevel)
+: > "$tmp/local"
 if [ -f "$root/.prove-it/patterns" ]; then
-  grep -v -e '^#' -e '^[[:space:]]*$' "$root/.prove-it/patterns" >> "$tmp/patterns"
+  grep -v -e '^#' -e '^[[:space:]]*$' "$root/.prove-it/patterns" > "$tmp/local"
 fi
+
+# Fail closed: an invalid pattern would make grep error and scan nothing.
+check_patterns() {
+  [ -s "$1" ] || return 0
+  printf 'x\n' | grep -E -f "$1" > /dev/null 2>&1
+  if [ $? -gt 1 ]; then
+    printf 'BLOCKED: %s contains an invalid pattern, so nothing can be scanned. Fix it and commit again.\n' "$2" >&2
+    exit 1
+  fi
+}
+check_patterns "$tmp/builtin" "the guard's built-in list"
+check_patterns "$tmp/local" ".prove-it/patterns"
 
 git diff --cached --name-only --diff-filter=ACMR > "$tmp/files"
 while IFS= read -r f; do
@@ -213,7 +241,11 @@ while IFS= read -r f; do
     printf 'BLOCKED: %s is not admitted by the .gitignore allowlist (force-added?).\n' "$f" >&2
     blocked=1
   fi
-  n=$(git diff --cached -U0 --no-color -- "$f" | grep '^+' | grep -v '^+++' | grep -c -i -E -f "$tmp/patterns")
+  git diff --cached -U0 --no-color -- "$f" | grep '^+' | grep -v '^+++' > "$tmp/added"
+  n=$(grep -c -E -f "$tmp/builtin" "$tmp/added")
+  if [ -s "$tmp/local" ]; then
+    n=$((n + $(grep -c -i -E -f "$tmp/local" "$tmp/added")))
+  fi
   if [ "$n" -gt 0 ]; then
     printf 'BLOCKED: %s has %s added line(s) that look like a secret.\n' "$f" "$n" >&2
     blocked=1
@@ -235,12 +267,12 @@ exit 0
 **Step 2: Run the tests**
 
 Run: `sh tests/guard.test.sh`
-Expected: `8 passed, 0 failed`, exit 0.
+Expected: `12 passed, 0 failed`, exit 0.
 
 **Step 3: Sabotage-test the tests (principle 4)**
 
 Run: `GUARD=tests/fixtures/always-pass-guard.sh sh tests/guard.test.sh; echo "exit=$?"`
-Expected: every `expect_block` case and the local-pattern case FAIL; `exit=1`. If this run passes, the tests prove nothing — stop and fix them.
+Expected: every `expect_block` case, the local-pattern case and the invalid-pattern case FAIL (8 of 12); `exit=1`. If this run passes, the tests prove nothing — stop and fix them.
 
 **Step 4: Self-safety check**
 
@@ -349,8 +381,8 @@ Expected: FAIL — cannot find module `skills/build-plan/file-plan.mjs`.
 // every issue carries a hidden key marker, so re-runs update instead of
 // duplicating. gh is always called with argument arrays, never a shell string.
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { readFileSync, writeFileSync, realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 export const GATES = ['merge', 'install', 'demo', 'handoff', 'publish'];
 const PRIORITIES = ['p0', 'p1', 'p2'];
@@ -438,6 +470,8 @@ function fakeGh() {
   const s = { labels: [], milestones: [], issues: [], writes: [] };
   const val = (args, flag) => args[args.indexOf(flag) + 1];
   const all = (args, flag) => args.flatMap((x, i) => (x === flag ? [args[i + 1]] : []));
+  const shape = (i) => ({ number: i.number, title: i.title, body: i.body,
+    labels: i.labels.map((name) => ({ name })), milestone: i.milestone ? { title: i.milestone } : null });
   const run = (args) => {
     const [a, b] = args;
     if (a === 'repo') return JSON.stringify({ nameWithOwner: 'me/app' });
@@ -445,13 +479,14 @@ function fakeGh() {
     if (a === 'label' && b === 'create') { s.writes.push(args); s.labels.push(args[2]); return ''; }
     if (a === 'api' && !args.includes('-f')) return JSON.stringify(s.milestones.map((title) => ({ title })));
     if (a === 'api') { s.writes.push(args); s.milestones.push(args.find((x) => x.startsWith('title=')).slice(6)); return '{}'; }
-    if (a === 'issue' && b === 'list') return JSON.stringify(s.issues.map((i) => ({
-      number: i.number, title: i.title, body: i.body,
-      labels: i.labels.map((name) => ({ name })), milestone: i.milestone ? { title: i.milestone } : null })));
+    if (a === 'issue' && b === 'list') {
+      const state = args.includes('--state') ? val(args, '--state') : 'open';
+      return JSON.stringify(s.issues.filter((i) => state === 'all' || i.state === state).map(shape));
+    }
     if (a === 'issue' && b === 'create') {
       s.writes.push(args);
       const number = s.issues.length + 1;
-      s.issues.push({ number, title: val(args, '--title'), body: val(args, '--body'), labels: all(args, '--label'),
+      s.issues.push({ number, state: 'open', title: val(args, '--title'), body: val(args, '--body'), labels: all(args, '--label'),
         milestone: args.includes('--milestone') ? val(args, '--milestone') : null });
       return `https://github.com/me/app/issues/${number}\n`;
     }
@@ -461,7 +496,9 @@ function fakeGh() {
       if (args.includes('--title')) i.title = val(args, '--title');
       if (args.includes('--body')) i.body = val(args, '--body');
       for (const l of all(args, '--add-label')) if (!i.labels.includes(l)) i.labels.push(l);
+      for (const l of all(args, '--remove-label')) i.labels = i.labels.filter((x) => x !== l);
       if (args.includes('--milestone')) i.milestone = val(args, '--milestone');
+      if (args.includes('--remove-milestone')) i.milestone = null;
       return '';
     }
     if (a === 'issue' && b === 'view') {
@@ -470,7 +507,8 @@ function fakeGh() {
     }
     throw new Error(`fake gh: unhandled ${args.join(' ')}`);
   };
-  return { s, run };
+  const openIssues = () => JSON.parse(run(['issue', 'list', '--state', 'open', '--json', 'number,title,labels']));
+  return { s, run, openIssues };
 }
 
 test('apply creates labels, milestones, the epic and the stories with the right labels', () => {
@@ -506,7 +544,7 @@ test('a second apply writes nothing', () => {
   assert.equal(s.issues.length, 4);
 });
 
-test('adding a story files exactly one new issue and updates its epic', () => {
+test('adding a story files exactly one new issue', () => {
   const { s, run } = fakeGh();
   createFiler({ run }).apply(valid());
   const p = valid();
@@ -514,6 +552,36 @@ test('adding a story files exactly one new issue and updates its epic', () => {
     size: 's', dependsOn: [], doneWhen: 'Done.', honestLimit: 'Limited.' });
   createFiler({ run }).apply(p);
   assert.equal(s.issues.length, 5);
+});
+
+test('moving a story to another gate replaces its owned labels and milestone', () => {
+  const { s, run } = fakeGh();
+  const { numbers } = createFiler({ run }).apply(valid());
+  const p = valid(); Object.assign(story(p, 'S1'), { gate: 'install', priority: 'p1', milestone: 'M2' });
+  const { problems } = createFiler({ run }).apply(p);
+  assert.deepEqual(problems, []);
+  const s1 = s.issues.find((i) => i.number === numbers.get('S1'));
+  assert.deepEqual(s1.labels.sort(), ['gate:install', 'p1', 'size:s']);
+  assert.equal(s1.milestone, 'S2 · Core build');
+});
+
+test('moving a story to the register drops its gate, priority and milestone', () => {
+  const { s, run } = fakeGh();
+  const { numbers } = createFiler({ run }).apply(valid());
+  const p = valid(); const s1 = story(p, 'S1');
+  delete s1.gate; delete s1.priority; delete s1.milestone; s1.register = true;
+  createFiler({ run }).apply(p);
+  const got = s.issues.find((i) => i.number === numbers.get('S1'));
+  assert.deepEqual(got.labels.sort(), ['register', 'size:s']);
+  assert.equal(got.milestone, null);
+});
+
+test('labels a person added are left alone', () => {
+  const { s, run } = fakeGh();
+  const { numbers } = createFiler({ run }).apply(valid());
+  s.issues.find((i) => i.number === numbers.get('S1')).labels.push('needs-design');
+  createFiler({ run }).apply(valid());
+  assert.ok(s.issues.find((i) => i.number === numbers.get('S1')).labels.includes('needs-design'));
 });
 
 test('titles with shell metacharacters are passed literally', () => {
@@ -527,16 +595,42 @@ test('read-back reports a missing label', () => {
   const { s, run } = fakeGh();
   const lossy = (args) => { const out = run(args); if (args[0] === 'issue' && args[1] === 'create') s.issues.at(-1).labels = []; return out; };
   const { problems } = createFiler({ run: lossy }).apply(valid());
-  assert.ok(problems.length > 0);
+  assert.ok(problems.some((p) => p.includes('missing labels')));
 });
 
-test('BACKLOG.md shows the next gate, its blockers and the register', () => {
-  const p = valid();
-  const numbers = new Map([['S1', 11], ['S2', 12], ['S3', 13]]);
-  const md = backlogMarkdown(p, numbers, new Date('2026-01-02T00:00:00Z'));
+test('read-back reports a stale owned label', () => {
+  const { s, run } = fakeGh();
+  const sticky = (args) => { const out = run(args); if (args[0] === 'issue' && args[1] === 'create') s.issues.at(-1).labels.push('gate:publish'); return out; };
+  const { problems } = createFiler({ run: sticky }).apply(valid());
+  assert.ok(problems.some((p) => p.includes('stale labels: gate:publish')));
+});
+
+test('BACKLOG.md counts open issues only, skips epics, and lists the register', () => {
+  const { s, run, openIssues } = fakeGh();
+  const { numbers } = createFiler({ run }).apply(valid());
+  let md = backlogMarkdown(openIssues(), new Date('2026-01-02T00:00:00Z'));
   assert.match(md, /\*\*Next gate:\*\* merge · \*\*Blockers:\*\* 1/);
   assert.match(md, /## Register \(blocks no gate\)/);
-  assert.match(md, /#13 Consider dark mode/);
+  assert.ok(!md.includes('Foundation\n'), 'epics are not listed as work');
+  s.issues.find((i) => i.number === numbers.get('S1')).state = 'closed';
+  md = backlogMarkdown(openIssues());
+  assert.match(md, /\*\*Next gate:\*\* install · \*\*Blockers:\*\* 1/);
+});
+
+test('a remediation-only plan adds to the backlog instead of replacing it', () => {
+  const { run, openIssues } = fakeGh();
+  createFiler({ run }).apply(valid());
+  const remediation = {
+    milestones: [{ key: 'M1', title: 'S1 · Foundation' }],
+    epics: [{ key: 'R', title: 'Grade remediation', body: 'From GRADE.md.' }],
+    stories: [{ key: 'R1', title: 'Fix the cap', epic: 'R', milestone: 'M1', gate: 'merge', priority: 'p0',
+      size: 's', dependsOn: [], doneWhen: 'Cap released.', honestLimit: 'One sitting.' }],
+  };
+  createFiler({ run }).apply(remediation);
+  const md = backlogMarkdown(openIssues());
+  assert.match(md, /Checks run on every push/);
+  assert.match(md, /Fix the cap/);
+  assert.match(md, /\*\*Blockers:\*\* 2/);
 });
 ```
 
@@ -556,6 +650,10 @@ export const LABELS = [
   ...SIZES.map((z) => ({ name: `size:${z}`, color: 'C5DEF5', description: `Size ${z.toUpperCase()}` })),
   { name: 'epic', color: '5319E7', description: 'Groups stories' },
 ];
+
+// Labels this tool owns. On re-runs, owned labels that no longer apply are removed;
+// any other labels a person added are left alone.
+export const isManaged = (l) => /^gate:/.test(l) || l === 'register' || /^p[0-2]$/.test(l) || /^size:/.test(l);
 
 const marker = (key) => `<!-- prove-it:key=${key} -->`;
 const MARKER_RE = /<!-- prove-it:key=([A-Za-z0-9_.-]+) -->/;
@@ -613,7 +711,8 @@ export function createFiler({ run, log = () => {}, verify = true }) {
           milestone: s.register ? null : msTitle.get(s.milestone) })),
       ];
 
-      // Pass 1: create new issues, update changed ones. `written` tracks each issue's body now.
+      // Pass 1: create new issues; bring changed ones in line (title, body,
+      // owned labels, milestone). `written` tracks each issue's body now.
       const written = new Map();
       for (const it of items) {
         const body = resolveRefs(it.body, numbers);
@@ -623,7 +722,9 @@ export function createFiler({ run, log = () => {}, verify = true }) {
           if (c.title !== it.title) args.push('--title', it.title);
           if (c.body !== body) args.push('--body', body);
           for (const l of it.labels) if (!c.labels.has(l)) args.push('--add-label', l);
+          for (const l of c.labels) if (isManaged(l) && !it.labels.includes(l)) args.push('--remove-label', l);
           if (it.milestone && c.milestone !== it.milestone) args.push('--milestone', it.milestone);
+          if (!it.milestone && c.milestone) args.push('--remove-milestone');
           if (args.length > 3) { run(args); log(`updated ${it.key} #${c.number}`); } else log(`unchanged ${it.key} #${c.number}`);
         } else {
           const args = ['issue', 'create', '--title', it.title, '--body', body];
@@ -642,13 +743,15 @@ export function createFiler({ run, log = () => {}, verify = true }) {
         if (body !== written.get(it.key)) run(['issue', 'edit', String(numbers.get(it.key)), '--body', body]);
       }
 
-      // Pass 3: read every issue back and confirm its labels.
+      // Pass 3: read every issue back; its owned labels must match exactly.
       const problems = [];
       if (verify) {
         for (const it of items) {
           const got = (json(['issue', 'view', String(numbers.get(it.key)), '--json', 'labels'])?.labels ?? []).map((l) => l.name);
           const missing = it.labels.filter((l) => !got.includes(l));
+          const extra = got.filter((l) => isManaged(l) && !it.labels.includes(l));
           if (missing.length) problems.push(`${it.key} #${numbers.get(it.key)} is missing labels: ${missing.join(', ')}`);
+          if (extra.length) problems.push(`${it.key} #${numbers.get(it.key)} has stale labels: ${extra.join(', ')}`);
         }
       }
       return { numbers, problems };
@@ -656,21 +759,37 @@ export function createFiler({ run, log = () => {}, verify = true }) {
   };
 }
 
-export function backlogMarkdown(plan, numbers, now = new Date()) {
-  const stories = plan.stories;
-  const nextGate = GATES.find((g) => stories.some((s) => s.gate === g));
-  const line = (s) => `- #${numbers.get(s.key)} ${s.title}${s.register ? '' : ` · ${s.priority}`} · size ${s.size}`;
+// BACKLOG.md is built from the OPEN issues on GitHub, not from one plan file,
+// so closed work drops out and a remediation-only plan doesn't erase the rest.
+export function backlogMarkdown(openIssues, now = new Date()) {
+  const items = openIssues
+    .map((i) => {
+      const names = (i.labels ?? []).map((l) => (typeof l === 'string' ? l : l.name));
+      return {
+        number: i.number, title: i.title, epic: names.includes('epic'),
+        gate: (names.find((n) => n.startsWith('gate:')) ?? '').slice(5) || null,
+        register: names.includes('register'),
+        priority: names.find((n) => /^p[0-2]$/.test(n)) ?? null,
+        size: (names.find((n) => n.startsWith('size:')) ?? '').slice(5) || '?',
+      };
+    })
+    .filter((i) => !i.epic);
+  const nextGate = GATES.find((g) => items.some((i) => i.gate === g));
+  const line = (i) => `- #${i.number} ${i.title}${i.priority ? ` · ${i.priority}` : ''} · size ${i.size}`;
+  const byRank = (a, b) => (a.priority ?? 'p9').localeCompare(b.priority ?? 'p9') || a.number - b.number;
   const out = ['# Backlog', '',
-    `*Filed by prove-it build-plan on ${now.toISOString().slice(0, 10)}. Ranked by gate distance. The GitHub board is the live copy; the next gate is the earliest gate with open issues.*`, ''];
+    `*Written by prove-it build-plan on ${now.toISOString().slice(0, 10)} from the open issues on GitHub. Ranked by gate distance; the next gate is the earliest gate with open issues. The board is the live copy.*`, ''];
   out.push(nextGate
-    ? `**Next gate:** ${nextGate} · **Blockers:** ${stories.filter((s) => s.gate === nextGate).length}`
-    : '**Next gate:** none (no gated stories open)', '');
+    ? `**Next gate:** ${nextGate} · **Blockers:** ${items.filter((i) => i.gate === nextGate).length}`
+    : '**Next gate:** none (no gated issues open)', '');
   for (const g of GATES) {
-    const mine = stories.filter((s) => s.gate === g).sort((a, b) => a.priority.localeCompare(b.priority));
+    const mine = items.filter((i) => i.gate === g).sort(byRank);
     if (mine.length) out.push(`## ${g}`, '', ...mine.map(line), '');
   }
-  const reg = stories.filter((s) => s.register);
+  const reg = items.filter((i) => i.register).sort(byRank);
   if (reg.length) out.push('## Register (blocks no gate)', '', ...reg.map(line), '');
+  const loose = items.filter((i) => !i.gate && !i.register);
+  if (loose.length) out.push('## Needs a gate or register', '', ...loose.map(line), '');
   return out.join('\n');
 }
 ```
@@ -678,7 +797,7 @@ export function backlogMarkdown(plan, numbers, now = new Date()) {
 **Step 4: Run the tests**
 
 Run: `node --test tests/*.test.mjs`
-Expected: all tests PASS (11 validation + 7 filing).
+Expected: all tests PASS (11 validation + 12 filing).
 
 **Step 5: Commit** — `git add skills/build-plan/file-plan.mjs tests/file-plan.test.mjs` then `git commit -m "feat: file plans on GitHub idempotently; write BACKLOG.md"`.
 
@@ -691,6 +810,9 @@ Expected: all tests PASS (11 validation + 7 filing).
 **Step 1: Append CLI tests**
 ```js
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 const CLI = new URL('../skills/build-plan/file-plan.mjs', import.meta.url).pathname;
 const FIX = (f) => new URL(`./fixtures/${f}`, import.meta.url).pathname;
 
@@ -708,6 +830,13 @@ test('no mode prints usage and exits 2', () => {
   const r = spawnSync(process.execPath, [CLI], { encoding: 'utf8' });
   assert.equal(r.status, 2);
   assert.match(r.stderr, /usage/);
+});
+test('the CLI runs when invoked through a symlink', () => {
+  const link = join(mkdtempSync(join(tmpdir(), 'prove-it-')), 'file-plan.mjs');
+  symlinkSync(CLI, link);
+  const r = spawnSync(process.execPath, [link, FIX('plan.invalid.json'), '--check'], { encoding: 'utf8' });
+  assert.equal(r.status, 1, 'through a symlink the CLI must still run and reject the invalid plan');
+  assert.match(r.stderr, /exactly one of a gate or register/);
 });
 ```
 Create `tests/fixtures/plan.invalid.json`: a copy of `plan.valid.json` with `"gate": "merge"` removed from S1.
@@ -745,20 +874,25 @@ export async function main(argv) {
 
   const real = (args) => execFileSync('gh', args, { encoding: 'utf8' });
   const apply = mode === '--apply';
-  const { numbers, problems } = createFiler({ run: apply ? real : dryRunner(real), log: (m) => console.log(m), verify: apply }).apply(plan);
+  const { problems } = createFiler({ run: apply ? real : dryRunner(real), log: (m) => console.log(m), verify: apply }).apply(plan);
   if (problems.length) { console.error(`read-back failed:\n${problems.map((p) => `  - ${p}`).join('\n')}`); return 1; }
   if (apply) {
+    const open = JSON.parse(real(['issue', 'list', '--state', 'open', '--limit', '1000', '--json', 'number,title,labels']));
     const i = rest.indexOf('--backlog');
     const path = i >= 0 ? rest[i + 1] : 'BACKLOG.md';
-    writeFileSync(path, backlogMarkdown(plan, numbers));
-    console.log(`wrote ${path}`);
+    writeFileSync(path, backlogMarkdown(open));
+    console.log(`wrote ${path} from ${open.length} open issues`);
   }
   return 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  process.exitCode = await main(process.argv.slice(2));
+// Run only when invoked directly. Compare real paths: Node resolves symlinks in
+// import.meta.url but not in argv[1], so a plain comparison would silently skip
+// main() when the kit is reached through a symlink.
+function invokedDirectly() {
+  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
 }
+if (process.argv[1] && invokedDirectly()) process.exitCode = await main(process.argv.slice(2));
 ```
 
 **Step 4: Run the tests** — `node --test tests/*.test.mjs` → all PASS.
