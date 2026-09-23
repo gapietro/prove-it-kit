@@ -29,7 +29,7 @@ Per-term checks feed a single criterion as a coverage ratio, so a design with
 
 | Dimension | Criterion id | Passes when |
 |---|---|---|
-| Design | `design.signed` | Every design record is signed (template §9 rule) |
+| Design | `design.signed` | At least one design record exists in the repo, and every design record is signed (template §9 rule). No record in the repo is a fail, with the reason "missing" |
 | Design | `design.terms-tested` | 100% of terms (C1…) are named by at least one test; shown as `n of m` |
 | Design | `design.gates-evidenced` | 100% of §7 pass criteria for gates at or before the milestone have run evidence; `n of m` |
 | Design | `design.failure-modes` | Every §5 failure mode has a handling term or test |
@@ -51,10 +51,12 @@ Per-term checks feed a single criterion as a coverage ratio, so a design with
 - **Scoring:** pass = 1; fail and unverified = 0, and unverified is shown as
   such. Dimension score = round(100 × passes ÷ 6). Overall = mean of the three.
 - **Caps** (by criterion id, applied after the mean, can't be averaged away):
-  - **49:** `code.build` fail or unverified; `code.tests` fail; `code.secrets` fail.
-  - **74:** `design.signed`, `design.terms-tested`, `code.oob` or
-    `ready.ai-bounded` fail; `ready.install` not pass at a milestone whose gate
-    is install or later; `design.missing` (no design record in the repo).
+  - **49:** `code.build` fail or unverified; `code.tests` fail or unverified (no
+    test script means no evidence of tests, which must never score better than
+    failing tests); `code.secrets` fail.
+  - **74:** `design.signed` (including a missing record), `design.terms-tested`,
+    `code.oob` or `ready.ai-bounded` fail; `ready.install` not pass at a
+    milestone whose gate is install or later.
 - **Bands:** unchanged from 0.1.0.
 - **Remediation:** one story per failed or unverified criterion (at most 18),
   key `grade.<gate>.<criterion id>`, filed through `file-plan.mjs --reopen`.
@@ -68,7 +70,7 @@ Per-term checks feed a single criterion as a coverage ratio, so a design with
 |---|---|
 | design-challenge batches questions | Every turn ends with **exactly one question**. Extra questions wait for later turns. A turn that needs no answer asks nothing. |
 | Terms rewritten without read-back | Before writing the record, list every term, numbered, in the exact wording to be written, and ask: *"Confirm these N terms, or correct any."* Write **exactly** the confirmed list. Splitting or merging a term is proposed in the read-back, never done silently. `amend` reads back the added or changed terms the same way. |
-| Build pass/fail from output text | Run each check so its exit status is captured (`now-sdk build; echo "exit=$?"`) and judge **only** by the exit status; quote the output as evidence, not as the verdict. |
+| Build pass/fail from output text | Judge build, test and lint **only** by exit status: the shell tool reports a non-zero exit with its code, so run the plain command (`now-sdk build`, `npm test`) and read the status it reports; quote the output as evidence, not as the verdict. If the status isn't visible, the check is **unverified**, never inferred from the words. The re-run harness must allow the plain build, test and lint commands. |
 | Hostnames via `now-sdk auth --list` | Grade never runs `now-sdk auth --list` (it prints instance hosts). It asks: *"Which alias should I install to? Type the alias name."* A yes counts only if it names the alias (unchanged). |
 | Handoff (no argument) reads unlisted inputs | Inputs are listed explicitly: design records, `src/`, the RUNBOOK and HANDOFF templates, and an existing `RUNBOOK.md` if present. A rule: *"Read nothing else — not GRADE.md, not BACKLOG.md."* |
 | Remediation grouping | Resolved by §2: one story per failed or unverified criterion. |
@@ -85,9 +87,10 @@ Per-term checks feed a single criterion as a coverage ratio, so a design with
 | D10 | Remediation proposes one story per failed or unverified criterion, never more than 18 | The proposed plan |
 | E6 | Handoff with no argument reads only its listed inputs | Transcript tool calls |
 
-The 0.1.0 run's transcripts already show B6, B7, D7 and E6 failing, and D8 and
-D10 not meeting the new wording. Those rows are recorded as FAIL (dated,
-0.1.0-rc.1) before the fixes. D9 is recorded from the 0.1.0-rc.1 skill text.
+The 0.1.0 run's transcripts show all seven failing. Those rows are recorded as
+FAIL before the fixes, labelled like the rest of that run's evidence: "0.1.0
+(unreleased; content released as 0.1.0-rc.1)". D9 rests on the skill text,
+since the harness blocked the command from actually running.
 
 ## 5. Out of scope
 
