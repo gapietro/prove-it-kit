@@ -50,6 +50,9 @@ merge on green, delete the branch. No step-by-step questions.
   `register` issues.
 - Priority is gate distance only: p0 = blocks the next gate; p1 = blocks the gate
   after it; p2 = further out.
+- Priorities move with the gates. When the next gate changes (its last blocker
+  closes), re-rank: relabel p0/p1/p2 on open issues to match the new gate
+  distance. The ranking step at session open does this and says what it changed.
 - Nothing is picked "because it's quick".
 - Blockers-to-gate flat for a week → stop filing, start closing.
 - Audits and grades run at milestones only.
