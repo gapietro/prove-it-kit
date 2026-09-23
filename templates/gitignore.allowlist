@@ -52,5 +52,6 @@
 .DS_Store
 *.local
 dist/
+drill-card*.md
 
 # Admitted lines appended below this point.
