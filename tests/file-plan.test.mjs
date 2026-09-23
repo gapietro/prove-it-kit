@@ -222,6 +222,25 @@ test('milestones on a later page are recognised, not created again', () => {
   assert.deepEqual(made, ['title=S2 · Core build']);
 });
 
+test('a later plan re-listing an epic appends to its checklist and keeps ticks', () => {
+  const { s, run } = fakeGh();
+  const first = createFiler({ run }).apply(valid()).numbers;
+  const epic = s.issues.find((i) => i.number === first.get('E1'));
+  epic.body = epic.body.replace(`- [ ] #${first.get('S1')}`, `- [x] #${first.get('S1')}`);
+  const later = {
+    milestones: [{ key: 'M1', title: 'S1 · Foundation' }],
+    epics: [{ key: 'E1', title: 'Foundation', body: 'Repo, checks, test harness.' }],
+    stories: [{ key: 'S9', title: 'Later story', epic: 'E1', milestone: 'M1', gate: 'merge', priority: 'p1',
+      size: 's', dependsOn: [], doneWhen: 'Done.', honestLimit: 'Limited.' }],
+  };
+  const { numbers } = createFiler({ run }).apply(later);
+  for (const line of [`- [x] #${first.get('S1')}`, `- [ ] #${first.get('S2')}`, `- [ ] #${first.get('S3')}`, `- [ ] #${numbers.get('S9')}`]) {
+    assert.ok(epic.body.includes(line), `epic body should contain "${line}":\n${epic.body}`);
+  }
+  assert.ok(!epic.body.includes('{{'), 'references are resolved');
+  assert.equal(epic.body.match(new RegExp(`#${first.get('S1')}(?!\\d)`, 'g')).length, 1, 'S1 listed once');
+});
+
 test('labels a person added are left alone', () => {
   const { s, run } = fakeGh();
   const { numbers } = createFiler({ run }).apply(valid());

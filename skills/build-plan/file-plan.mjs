@@ -115,6 +115,16 @@ export function epicBody(e, stories) {
     .join('\n').trim() + '\n';
 }
 
+// An epic that already exists keeps its body, so ticked boxes and stories from
+// earlier plans survive. Only this plan's stories it doesn't reference yet
+// (as {{KEY}} or as the resolved #N) are appended; existing lines are never rewritten.
+export function extendEpicBody(body, epicKey, stories, numbers) {
+  const text = body ?? '';
+  const listed = (k) => text.includes(ref(k)) || (numbers.has(k) && new RegExp(`#${numbers.get(k)}(?!\\d)`).test(text));
+  const add = stories.filter((s) => s.epic === epicKey && !listed(s.key)).map((s) => `- [ ] ${ref(s.key)}`);
+  return add.length ? `${text.replace(/\s+$/, '')}\n${add.join('\n')}\n` : text;
+}
+
 export const storyLabels = (s) => (s.register ? ['register', `size:${s.size}`] : [`gate:${s.gate}`, s.priority, `size:${s.size}`]);
 
 export const resolveRefs = (text, numbers) =>
@@ -164,7 +174,8 @@ export function createFiler({ run, log = () => {}, verify = true }) {
       const numbers = new Map([...current].map(([k, v]) => [k, v.number]));
 
       const items = [
-        ...(plan.epics ?? []).map((e) => ({ key: e.key, title: e.title, body: epicBody(e, plan.stories), labels: ['epic'], milestone: null })),
+        ...(plan.epics ?? []).map((e) => ({ key: e.key, title: e.title, labels: ['epic'], milestone: null,
+          body: current.has(e.key) ? extendEpicBody(current.get(e.key).body, e.key, plan.stories, numbers) : epicBody(e, plan.stories) })),
         ...plan.stories.map((s) => ({ key: s.key, title: s.title, body: storyBody(s), labels: storyLabels(s),
           milestone: s.register ? null : msTitle.get(s.milestone) })),
       ];
