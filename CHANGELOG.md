@@ -19,3 +19,4 @@ First version.
 - `docs/SETUP-CHECKLIST.md`, this README, and CI running `npm test` on every
   push and pull request, on Node 22, 24 and 26.
 - Requires Node ≥ 22; 20 reached end of life in April 2026.
+- Guard installed in the kit's own repo.
