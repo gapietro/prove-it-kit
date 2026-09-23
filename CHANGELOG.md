@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.2 — unreleased
+
+Tells the builder how grade counts a term as tested. Fixes #14.
+
+- `templates/CLAUDE.md` has a Tests section: every test names the design term
+  it proves, as a whole word at the start of its name (`C3: …`, or
+  `<Feature> C3: …` with several records), because grade's
+  `design.terms-tested` counts a term only when its id appears as a whole word
+  in a test's name or in a test file (T1).
+- `build-plan`: every story that implements a term has a `doneWhen` asking
+  for tests that name its term ids; stories that only rule on an `OPEN` term
+  are exempt (P6).
+- README: the grade rows say up front how a term counts as tested; the
+  build-plan row says term stories ask for term-named tests.
+
 ## 0.1.1 — 2026-09-23 (private)
 
 Acceptance notes: B6 passes on a question count (each read-back counts as its turn's one question); two turns still join close asks. B7 passes on the final file after one self-corrected write. Both are tracked in #3.
