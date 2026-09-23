@@ -46,7 +46,7 @@ One row per gate this feature touches. Gate is one of merge, install, demo, hand
 
 ## 9. Approval
 
-A person fills this in; a skill never does. The record is signed only when this table has a complete row and every drift-log row has Signed by filled in. Otherwise it is unsigned.
+A person fills this in; a skill never does. The record is signed only when this table has a complete row and every drift-log row has Signed by filled in. A cell holding only a placeholder (TBD, pending, -, n/a, ?, Claude, or template text in <…>) counts as empty. Otherwise it is unsigned.
 
 | Name | Role | Date | Signature |
 |---|---|---|---|
