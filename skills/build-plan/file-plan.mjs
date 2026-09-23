@@ -81,8 +81,8 @@ function findCycle(stories) {
 export const LABELS = [
   ...GATES.map((g) => ({ name: `gate:${g}`, color: '0E8A16', description: `Blocks the ${g} gate` })),
   { name: 'register', color: 'BFD4F2', description: 'Blocks no gate: watch list' },
-  { name: 'p0', color: 'B60205', description: 'Blocks the current gate' },
-  { name: 'p1', color: 'D93F0B', description: 'Blocks the next gate' },
+  { name: 'p0', color: 'B60205', description: 'Blocks the next gate' },
+  { name: 'p1', color: 'D93F0B', description: 'Blocks the gate after the next one' },
   { name: 'p2', color: 'FBCA04', description: 'Further out' },
   ...SIZES.map((z) => ({ name: `size:${z}`, color: 'C5DEF5', description: `Size ${z.toUpperCase()}` })),
   { name: 'epic', color: '5319E7', description: 'Groups stories' },
