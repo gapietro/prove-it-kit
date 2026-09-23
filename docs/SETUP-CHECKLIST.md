@@ -8,7 +8,7 @@ Tick every box before you start a build (or a recording) with the prove-it kit.
       with only public tools installed: no private plugins, no private skills,
       no personal `~/.claude/CLAUDE.md`, no saved memory from other work.
       What the viewer sees must be what the kit does on its own.
-- [ ] **Node ≥ 20** (`node --version`).
+- [ ] **Node ≥ 22** (`node --version`).
 - [ ] **Claude Code installed** (`claude --version`).
 - [ ] **GitHub CLI signed in**: `gh auth login` done, and `gh auth status` is green.
 - [ ] **now-sdk installed** and `now-sdk auth --add <instance> --alias <alias>`
@@ -28,6 +28,8 @@ Tick every box before you start a build (or a recording) with the prove-it kit.
       from `templates/BRIEF.md`. The app repo is created inside this folder
       later; `CONSULT.md`, `plan.json` and drill cards stay in the workspace,
       outside the repo.
+- [ ] *(Optional)* **gitleaks installed** (`gitleaks version`), for the full
+      history scan before you publish a repo (see the README, Honest limits).
 - [ ] **The guard installed** in the app repo once it exists (see the README,
       "The guard").
 

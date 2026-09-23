@@ -11,7 +11,8 @@ point at a time and writes it up as a design record that a person signs.
 GitHub. **Grade** scores the build at each milestone, with the arithmetic
 shown, and caps the score when something blocks release. **Handoff** proves
 that someone who didn't build the app can run it: it checks every record has a
-reason, writes a runbook, and runs a planted-failure drill. The AI does the
+reason, writes a runbook, and runs a drill: a person plants a realistic
+failure, and a fresh session diagnoses it from the runbook alone. The AI does the
 work. A person designs, signs and approves.
 
 ## Install
@@ -23,7 +24,7 @@ In Claude Code:
 /plugin install prove-it@prove-it
 ```
 
-Needs Node ≥ 20, `git` and the GitHub CLI (`gh`). Then work through
+Needs Node ≥ 22, `git` and the GitHub CLI (`gh`). Then work through
 [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md). The pre-commit
 guard is installed separately from a local clone of this repo (`git clone`
 it anywhere; see The guard).
@@ -34,9 +35,9 @@ it anywhere; see The guard).
 |---|---|---|---|
 | `/prove-it:consult [brief]` | The brief (default: the single file in `brief/`) | `CONSULT.md` in the workspace root | Write anything before you confirm its restatement of the brief |
 | `/prove-it:design-challenge [consult]`<br>`/prove-it:design-challenge amend [record]` | `./CONSULT.md`, else `../CONSULT.md`; the kit's `DESIGN.md` template. `amend` reads the existing record | `docs/DESIGN-<Feature>.md`. `amend` adds or changes terms, with one unsigned drift-log row for each | Sign the record, or fill in any Signed by cell |
-| `/prove-it:build-plan [record]` | A signed `docs/DESIGN-*.md` (here, else `../docs/`); the live GitHub board | `plan.json` in the workspace; labels, milestones, epics and stories on GitHub (through `file-plan.mjs`); `BACKLOG.md` | File from an unsigned record (or without your approval) |
-| `/prove-it:grade [milestone]` | The repo, its design records, the board; runs the build and tests | `GRADE.md` at the repo root; a remediation plan in `../plan-grade.json`, filed only on approval (which also rewrites `BACKLOG.md`) | Claim a check it didn't run (and it asks before installing) |
-| `/prove-it:handoff`<br>`… plant` · `… diagnose [symptom]` · `… verdict` | `src/`, the design records and the templates. `diagnose` reads **only** `RUNBOOK.md` | `RUNBOOK.md` and a `HANDOFF.md` draft; `plant` writes a numbered drill card and `diagnose` writes numbered drill notes, both in the workspace; `verdict` writes the final `HANDOFF.md` | Soften the verdict |
+| `/prove-it:build-plan [record]` | A signed `docs/DESIGN-*.md` (here, else `../docs/`); the live GitHub board | `plan.json` in the workspace; labels, milestones, epics and stories on GitHub (through `file-plan.mjs`); `BACKLOG.md`, appending `!/BACKLOG.md` to `.gitignore` | File from an unsigned record (or without your approval) |
+| `/prove-it:grade [milestone]` | The repo, its design records, the board; runs the build and tests | `GRADE.md` at the repo root, appending `!/GRADE.md` to `.gitignore`; a remediation plan in `../plan-grade.json`, filed only on approval (which also rewrites `BACKLOG.md`) | Claim a check it didn't run (and it asks before installing) |
+| `/prove-it:handoff`<br>`… plant` · `… diagnose [symptom]` · `… verdict` | `src/`, the design records and the templates. `plant` also reads `RUNBOOK.md`; `diagnose` reads **only** `RUNBOOK.md`; `verdict` reads every card and notes file | `RUNBOOK.md` and a `HANDOFF.md` draft, appending `!/RUNBOOK.md` and `!/HANDOFF.md` to `.gitignore`; `plant` writes a drill card (`../drill-card.md`, then numbered ones) and `diagnose` writes numbered drill notes, both in the workspace; `verdict` writes the final `HANDOFF.md` | Soften the verdict |
 
 Each command ends by naming the next one.
 
@@ -109,19 +110,28 @@ It is a seatbelt, not a vault: see Honest limits.
   It doesn't scan binary files, and it can't handle file names that contain a
   newline. It only knows the secret shapes it lists. Keep a full history scan
   (for example gitleaks) before you publish a repo.
+- The guard's AWS pattern catches long-term access key ids (`AKIA…`), not
+  temporary ones (`ASIA…`).
+- The guard also blocks files ignored by your global gitignore or
+  `.git/info/exclude`, but reports them as "not admitted by the allowlist".
 - The guard can also block things that aren't secrets: a CSS class name
   that happens to share an API key's prefix looks like a key to it. It fails closed.
 - **Listing limits.** The filer and the skills read at most 5000 issues. If
   the listing is full, they stop instead of risking duplicates. Milestones are
   read in full, page by page.
-- **Re-applying a plan overwrites hand edits.** If you edited an issue's title
-  or body on GitHub, `--apply` puts the plan's text back. Change the plan
-  instead. An issue body edited on the web may come back with different line
-  endings, and then look changed on every run. A changed title also prints a
+- **Re-applying a plan overwrites hand edits.** If you edited an issue's
+  title, or a story's body, on GitHub, `--apply` puts the plan's text back (an
+  epic keeps its body; the filer only appends missing stories). Change the
+  plan instead. An issue body edited on the web may come back with different
+  line endings, and then look changed on the next run after a web edit
+  (unverified against a live repo). A changed title also prints a
   key-collision warning, even when the change was intended.
 - The filer ends in a stack trace instead of a clean message when `gh` fails
-  during `--apply`, when there are more than 5000 issues, or when `milestones`
-  or `epics` in a plan is not a list.
+  (during `--dry-run` or `--apply`), when there are more than 5000 issues,
+  when `milestones` or `epics` is not a list, or when an entry in `stories` is
+  not an object (for example `null`).
+- The filer reads at most 500 labels from the repo. On a repo with more, a
+  label it needs may look missing.
 - The version number lives in three places (`plugin.json` and twice in
   `marketplace.json`), and nothing checks that they agree.
 - `templates/DESIGN.md` has no components section, so the handoff's coverage
