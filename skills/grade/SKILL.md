@@ -19,7 +19,7 @@ Arguments given: `$ARGUMENTS` (may be empty).
 
 - **Milestone (optional).** A milestone title or its gate (for example
   `M2 · install` or `install`). If empty, list the milestones
-  (`gh api repos/{owner}/{repo}/milestones?state=all --jq '.[] | [.title, .open_issues, .closed_issues] | @tsv'`)
+  (`gh api --paginate 'repos/{owner}/{repo}/milestones?state=all&per_page=100' --jq '.[] | [.title, .open_issues, .closed_issues] | @tsv'`)
   and ask which one. Never pick one yourself.
 - **Run from inside the app repo** (`git rev-parse --show-toplevel`). Read the
   repo's `CLAUDE.md` Project facts for the scope and the instance alias.
@@ -30,7 +30,7 @@ Arguments given: `$ARGUMENTS` (may be empty).
 ## Steps
 
 1. **Check the milestone is reached.** Count its open gated issues:
-   `gh issue list --milestone "<title>" --state open --json number,labels`,
+   `gh issue list --milestone "<title>" --state open --limit 1000 --json number,labels`,
    ignoring `register` and `epic`. If any are open, say: "This milestone is not
    reached (<n> open). Grades run at milestones, not mid-sprint." List them and
    ask whether to grade anyway. If the board can't be read, record the
@@ -56,7 +56,11 @@ Arguments given: `$ARGUMENTS` (may be empty).
    the record's feature name, `<n>` the term number, and `<gate>`, `<table>`,
    `<call>` are names from the record. Always use these ids, so the same
    finding gets the same id at every grade.
-   - **Sound design:** every design record is signed [`design.<F>.signed`];
+   - **Sound design:** every design record is signed [`design.<F>.signed`],
+     by the signing rule in `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md`: §9
+     Approval has at least one row with Name, Role, Date and Signature all
+     filled, **and** every §10 drift-log row has Signed by filled (an empty
+     drift log passes; header rows are not data rows);
      every term has code that implements it [`design.<F>.C<n>.built`];
      every table in §4 has exactly one owner of writes in the code
      [`design.<F>.<table>.owner`]; every failure mode in §5 has handling in
@@ -99,7 +103,9 @@ Arguments given: `$ARGUMENTS` (may be empty).
    and `_ . -`. Write it in the workspace (`../plan-grade.json`),
    never in the repo. Run `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs <file> --check`,
    show the preview table, and stop for approval.
-10. **File only on approval**, only through the filer: offer `--dry-run`, then
+10. **File only on approval**, only through the filer: offer
+    `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs <file> --dry-run`,
+    then the same with
     `--apply --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`. The
     filer also rewrites `BACKLOG.md` from the open issues.
 11. **Write `GRADE.md`** at the repo root (sections under Output). If
