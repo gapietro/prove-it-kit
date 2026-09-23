@@ -18,7 +18,8 @@ Arguments given: `$ARGUMENTS` (may be empty).
 
 - **First word `amend`** → amend mode (step A below). The rest, if any, is the
   path of the record to amend. With no path: if exactly one `docs/DESIGN-*.md`
-  exists, use it; otherwise ask which.
+  exists, use it. If none is found in the current directory, look in
+  `../docs/` the same way. If there is still none, or more than one, ask which.
 - **Any other argument** → the path of the consult file.
 - **No argument** → `./CONSULT.md`; if absent, `../CONSULT.md` (the design may
   be written from the workspace, or amended later from inside the app repo).
@@ -105,3 +106,9 @@ order and headings, terms numbered C1…, §9 Approval blank, §10 Drift log emp
 `/prove-it:build-plan docs/DESIGN-<Feature>.md`. It refuses an unsigned
 record." build-plan reads the terms (§3), the gates (§7) and the signatures
 (§9, §10).
+
+Where the record lives: it is first written in the workspace
+(`docs/DESIGN-<Feature>.md`). When the app repo is created, move it into the
+repo's `docs/` and append `!/docs/` to the repo's `.gitignore` in the same
+commit (see `templates/CLAUDE.md`, Tracking files). From then on the repo copy
+is the only live copy, and `amend` runs from inside the repo.
