@@ -86,3 +86,5 @@ For F2 and F4, Pass means the sabotaged suite failed, as it must.
 | 2026-09-23 | 0.1.0 (unreleased) | F2 | Pass | `GUARD=tests/fixtures/always-pass-guard.sh sh tests/guard.test.sh`: 5 passed, 14 failed, exit 1. |
 | 2026-09-23 | 0.1.0 (unreleased) | F3 | Pass | `node --test tests/*.test.mjs` on Node v26.5.0: 38 tests, 38 pass, 0 fail. |
 | 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | `validatePlan` made to start with `return [];`: 38 tests, 24 pass, 14 fail. Restored with `git checkout -- skills/build-plan/file-plan.mjs`: 38 pass, 0 fail. |
+| 2026-09-23 | 0.1.0 (unreleased) | F3 | Pass | Rerun after label-description edits were added: `node --test tests/*.test.mjs` on Node v26.5.0: 40 tests, 40 pass, 0 fail. |
+| 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | Rerun after the same change: `validatePlan` made to start with `return [];`: 40 tests, 26 pass, 14 fail. Restored with `git checkout -- skills/build-plan/file-plan.mjs`: 40 pass, 0 fail. |
