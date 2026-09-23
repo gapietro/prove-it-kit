@@ -1,0 +1,132 @@
+---
+name: build-plan
+description: Use when a signed design record (docs/DESIGN-<Feature>.md) exists and its work is not yet on GitHub, to draft plan.json from the record's terms and gates, preview it, and on approval file milestones, epics and stories through file-plan.mjs, which also writes BACKLOG.md.
+---
+
+# build-plan
+
+## Purpose
+
+Turn a signed design record into a GitHub plan: milestones at gate boundaries,
+epics, and stories that each block a named gate or sit in the register. You
+draft `plan.json`; the kit's script `file-plan.mjs` validates it and does all
+the filing. You never file from an unsigned record, never file without the
+person's approval, and never file a story that names neither a gate nor
+`register`.
+
+## Input
+
+Arguments given: `$ARGUMENTS` (may be empty).
+
+- **Design record path (optional).** If given, use it. If empty, use the single
+  `docs/DESIGN-*.md` in the current directory; if there is none, look in
+  `../docs/` the same way. If there is still none, or more than one, ask which.
+  Never pick one yourself.
+- **Template:** `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md` holds the signing
+  rule. Read it; don't restate it from memory.
+- **Script:** `${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs`. Never
+  call `gh issue create`, `gh label` or the milestones API yourself.
+- **Priority rule:** `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.md`, Backlog
+  discipline (gate order and gate distance).
+
+## Steps
+
+1. **Check the signatures. Refuse if unsigned.** Read the record's §9 Approval
+   and §10 Drift log. Header and separator rows are not data rows.
+   - §9 passes only if at least one row has all four cells filled: Name,
+     Role, Date, Signature. The template's blank `| | | | |` row fails.
+   - §10 passes only if every data row has Signed by filled. An empty drift
+     log (header only) passes.
+   If either fails, stop. Say the record is unsigned and name the exact gap,
+   for example "§9 Approval: Date and Signature are empty" or "§10 Drift log,
+   row 2 (C4): Signed by is empty". Say: "A person signs this; I don't. Run me
+   again once it is signed." Draft nothing and run nothing.
+2. **Read the record.** Take §3 Terms (C1…), §7 Gates and their pass criteria,
+   §5 Failure modes, and anything the record puts out of scope (§3, §8). Note
+   any `OPEN` item; it becomes a story or an open question, never a guess.
+3. **Read the board, if a repo is reachable.** From inside the app repo run
+   `gh api repos/{owner}/{repo}/milestones?state=all --jq '.[].title'` and
+   `gh issue list --state all --limit 500 --json number,title,body`. Reuse
+   existing milestone titles exactly (milestones are matched by title, so a
+   changed title makes a duplicate). Collect keys already used in
+   `<!-- prove-it:key=… -->` markers; a new key must not reuse one.
+4. **Draft `plan.json`** in this shape (the schema `file-plan.mjs` enforces):
+   - `milestones[]`: `key`, `title`, `description`. One per gate the record
+     touches, in gate order merge → install → demo → handoff → publish, named
+     for the gate boundary (for example `M1 · merge`), never for a date.
+     Titles must be unique.
+   - `epics[]`: `key`, `title`, `body`. Group stories by term or area.
+   - `stories[]`: `key`, `title`, `epic`, `size` (`s|m|l`), `dependsOn[]`,
+     `doneWhen`, `honestLimit`, optional `body`, and then **either**
+     - `gate` (one of the five), `milestone` (a milestone key) and `priority`,
+       **or**
+     - `register: true` with **no** milestone and **no** priority.
+   - **Priority** is gate distance only, counted from the next gate (the
+     earliest gate that will have open issues): p0 = blocks it, p1 = blocks the
+     gate after, p2 = further out. Nothing is ranked "because it's quick".
+   - **Keys** use only letters, digits, `_ . -`. They share one namespace
+     across milestones, epics and stories and are unique for the life of the
+     repo. For a second design record, prefix keys with the feature name
+     (`Intake.S3`) so they can't collide with an earlier plan.
+   - **Derive, don't invent.** Every term C<n> is covered by at least one story
+     whose `doneWhen` is that term's check; every §7 pass criterion is the
+     `doneWhen` of a story on that gate. Out-of-scope items become `register`
+     stories or nothing; never gated work. `honestLimit` says what passing the
+     story does **not** prove.
+   - Reference other stories in a body as `{{KEY}}`; the script resolves them
+     to issue numbers.
+5. **Where `plan.json` lives.** Write it in the workspace (`../plan.json`
+   from the repo) or a temp folder. Never inside the repo. It is a working
+   file and is not committed; the board is the record.
+6. **Check it.** Run
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs <plan.json> --check`.
+   If it is rejected, fix the plan and run it again. Never edit the script to
+   make a plan pass.
+7. **Preview and stop.** Show the `plan OK` summary line, then a table:
+
+   | Key | Title | Epic | Milestone | Gate / register | Priority | Size | Depends on | Done when |
+   |---|---|---|---|---|---|---|---|---|
+
+   List which term each story covers, and any term or pass criterion with no
+   story. Then say: "Reply 'approve' to file this, or tell me what to change."
+   End your turn. File nothing until the person approves.
+8. **Dry run.** On approval, offer `--dry-run` first. It prints every write it
+   would make and files nothing, but it reads the live repo, so it also runs
+   from inside the app repo with `gh` authenticated (`gh auth status`).
+9. **Apply.** From inside the app repo (`git rev-parse --show-toplevel`), run
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/build-plan/file-plan.mjs <plan.json> --apply --backlog "$(git rev-parse --show-toplevel)/BACKLOG.md"`.
+   Report what it created, updated and left unchanged. If the read-back fails,
+   show the problems. Don't hand-edit issues to hide them.
+10. **Track BACKLOG.md.** If `.gitignore` has no `!/BACKLOG.md` line, append
+    it at the end, and commit it with `BACKLOG.md` in the same commit.
+
+## Output
+
+- `plan.json` in the workspace or a temp folder. It is not committed.
+- On GitHub: labels (`gate:*`, `register`, `p0`–`p2`, `size:*`, `epic`),
+  milestones, epic issues and story issues, each carrying its key marker.
+- `BACKLOG.md` at the repo root, written by the script from the open issues on
+  GitHub (not from the plan), with the next gate and its blocker count at the
+  top.
+
+## Rules you can't break
+
+- Never draft or file from an unsigned record. Name the missing part.
+- Never file without the person's explicit approval of the preview.
+- Every story names exactly one gate, or `register`. Register stories have
+  no milestone and no priority.
+- File only through `file-plan.mjs`. Never call `gh` to create or edit issues,
+  labels or milestones directly.
+- Milestones are gate boundaries, never calendar dates.
+- Priority is gate distance only.
+- Keys are never reused for different work. Re-running the same plan files
+  nothing new.
+- Never commit `plan.json`, and never write secrets, credentials or instance
+  hostnames into it.
+
+## Hand-off
+
+"Next: start the top p0 story on its own branch. Session open reads
+`BACKLOG.md` and `SESSION-NOTE.md` (see `templates/CLAUDE.md`). At a milestone,
+run `/prove-it:grade <milestone>`." A new ask re-enters at
+`/prove-it:design-challenge amend`, then comes back here once it is signed.
