@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.2 — unreleased
+## 0.1.2 — 2026-09-23 (private)
 
 Tells the builder how grade counts a term as tested. Fixes #14.
 
@@ -12,6 +12,10 @@ Tells the builder how grade counts a term as tested. Fixes #14.
 - `build-plan`: every story that implements a term has a `doneWhen` asking
   for tests that name its term ids; stories that only rule on an `OPEN` term
   are exempt (P6).
+- `build-plan`: the preview lists any term that no story's `doneWhen` asks
+  tests to name, next to the terms and pass criteria with no story.
+- Acceptance: P6 passes on a headless build-plan run (dry run only); T1 passes
+  from the file; P1 and P4 re-checked.
 - README: the grade rows say up front how a term counts as tested; the
   build-plan row says term stories ask for term-named tests.
 
