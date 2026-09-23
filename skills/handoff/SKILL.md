@@ -78,6 +78,9 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    symptom a user would report (the text to give the diagnose session), and
    the exact restore steps with a check that the restore worked. Leave blank
    lines for "Planted by", "Planted on" and "Restored on".
+   Write the card even if the app isn't built or installed yet: mark any step
+   you can't make exact as **VERIFY**, with what to confirm first. An
+   unrestored card keeps the verdict NOT READY, which is correct.
 3. Tell the person: plant it on the test instance, ideally someone else does
    it. Then open a **fresh session** in the repo root, with nothing else
    read, and run `/prove-it:handoff diagnose <symptom>`. Open the diagnose
