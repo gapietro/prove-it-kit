@@ -20,3 +20,7 @@ First version.
   push and pull request, on Node 22, 24 and 26.
 - Requires Node ≥ 22; 20 reached end of life in April 2026.
 - Guard installed in the kit's own repo.
+- `handoff plant` writes the drill card even before the app is built, marking
+  steps it can't make exact as VERIFY (found by the acceptance run, E3).
+- Acceptance run 0.1.0 recorded in `tests/ACCEPTANCE.md`: 21 pass, 0 fail,
+  6 unverified.
