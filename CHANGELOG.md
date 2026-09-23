@@ -14,6 +14,10 @@ Tells the builder how grade counts a term as tested. Fixes #14.
   are exempt (P6).
 - `build-plan`: the preview lists any term that no story's `doneWhen` asks
   tests to name, next to the terms and pass criteria with no story.
+- `build-plan`: an OPEN term with only a ruling story is listed in the preview
+  as "pending ruling — no test yet", never hidden behind "none missing"; its
+  ruling story's `doneWhen` requires a build story whose tests name the term,
+  if the term is kept (found by the 0.1.2 acceptance run, C85).
 - Acceptance: P6 passes on a headless build-plan run (dry run only); T1 passes
   from the file; P1 and P4 re-checked.
 - README: the grade rows say up front how a term counts as tested; the
