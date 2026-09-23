@@ -21,6 +21,12 @@ export function validatePlan(plan) {
   const storyKeys = new Set(stories.map((s) => s.key));
   if (!stories.length) errors.push('plan has no stories');
 
+  const msTitles = new Set();
+  for (const m of plan.milestones ?? []) {
+    if (msTitles.has(m.title)) errors.push(`duplicate milestone title "${m.title}"`);
+    msTitles.add(m.title);
+  }
+
   const seen = new Set();
   for (const item of [...(plan.milestones ?? []), ...(plan.epics ?? []), ...stories]) {
     if (!item.key) { errors.push(`item without a key: ${JSON.stringify(item).slice(0, 60)}`); continue; }
@@ -139,9 +145,13 @@ export function createFiler({ run, log = () => {}, verify = true }) {
       const haveLabels = new Set((json(['label', 'list', '--limit', '500', '--json', 'name']) ?? []).map((l) => l.name.toLowerCase()));
       for (const l of LABELS) if (!haveLabels.has(l.name.toLowerCase())) run(['label', 'create', l.name, '--color', l.color, '--description', l.description]);
 
-      const haveMs = new Set((json(['api', `repos/${repo}/milestones?state=all&per_page=100`]) ?? []).map((m) => m.title));
+      // --paginate reads every page; --jq prints one title per line.
+      const msList = String(run(['api', '--paginate', `repos/${repo}/milestones?state=all&per_page=100`, '--jq', '.[].title']) ?? '');
+      const haveMs = new Set(msList.split('\n').filter(Boolean));
       for (const m of plan.milestones ?? []) {
-        if (!haveMs.has(m.title)) run(['api', `repos/${repo}/milestones`, '-f', `title=${m.title}`, '-f', `description=${m.description ?? ''}`]);
+        if (haveMs.has(m.title)) continue;
+        run(['api', `repos/${repo}/milestones`, '-f', `title=${m.title}`, '-f', `description=${m.description ?? ''}`]);
+        haveMs.add(m.title);
       }
       const msTitle = new Map((plan.milestones ?? []).map((m) => [m.key, m.title]));
 

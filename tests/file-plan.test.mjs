@@ -50,6 +50,10 @@ test('a key with characters outside A-Z a-z 0-9 _ . - is rejected', () => {
   const p = valid(); story(p, 'S3').key = 'S 3';
   const e = validatePlan(p); has(e, '"S 3"'); has(e, 'letters, digits, _ . -');
 });
+test('two milestones with the same title are rejected', () => {
+  const p = valid(); p.milestones[1].title = p.milestones[0].title;
+  has(validatePlan(p), 'duplicate milestone title "S1 · Foundation"');
+});
 test('bad priority and size are rejected', () => {
   const p = valid(); Object.assign(story(p, 'S1'), { priority: 'urgent', size: 'xl' });
   const e = validatePlan(p); has(e, 'priority must be'); has(e, 'size must be');
@@ -71,7 +75,11 @@ function fakeGh() {
     if (a === 'repo') return JSON.stringify({ nameWithOwner: 'me/app' });
     if (a === 'label' && b === 'list') return JSON.stringify(s.labels.map((name) => ({ name })));
     if (a === 'label' && b === 'create') { s.writes.push(args); s.labels.push(args[2]); return ''; }
-    if (a === 'api' && !args.includes('-f')) return JSON.stringify(s.milestones.map((title) => ({ title })));
+    if (a === 'api' && !args.includes('-f')) {
+      // Like the REST API: one page of 100 unless --paginate; --jq '.[].title' gives one title per line.
+      const got = args.includes('--paginate') ? s.milestones : s.milestones.slice(0, 100);
+      return args.includes('--jq') ? got.map((t) => `${t}\n`).join('') : JSON.stringify(got.map((title) => ({ title })));
+    }
     if (a === 'api') { s.writes.push(args); s.milestones.push(args.find((x) => x.startsWith('title=')).slice(6)); return '{}'; }
     if (a === 'issue' && b === 'list') {
       const state = args.includes('--state') ? val(args, '--state') : 'open';
@@ -203,6 +211,15 @@ test('refuses to file when the issue listing may be truncated', () => {
   };
   assert.throws(() => createFiler({ run: full }).apply(valid()), /more than 5000 issues/);
   assert.equal(s.writes.length, 0, 'nothing was written');
+});
+
+test('milestones on a later page are recognised, not created again', () => {
+  const { s, run } = fakeGh();
+  for (let i = 0; i < 150; i++) s.milestones.push(`Old ${i}`);
+  s.milestones.push('S1 · Foundation');
+  createFiler({ run }).apply(valid());
+  const made = s.writes.filter((w) => w[0] === 'api').map((w) => w.find((x) => x.startsWith('title=')));
+  assert.deepEqual(made, ['title=S2 · Core build']);
 });
 
 test('labels a person added are left alone', () => {
