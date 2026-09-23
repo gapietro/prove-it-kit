@@ -98,7 +98,8 @@ Arguments given: `$ARGUMENTS` (may be empty).
    Report what it created, updated and left unchanged. If the read-back fails,
    show the problems. Don't hand-edit issues to hide them.
 10. **Track BACKLOG.md.** If `.gitignore` has no `!/BACKLOG.md` line, append
-    it at the end, and commit it with `BACKLOG.md` in the same commit.
+    it at the end. Don't commit. Tell the person to commit `.gitignore` and
+    `BACKLOG.md` together on a branch, never on main.
 
 ## Output
 
