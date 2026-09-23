@@ -64,6 +64,7 @@ expect_block "credentials in a URL are blocked" src/app.js "$(printf 'https://ad
 expect_block "force-added outside allowlist"    notes.txt 'meeting notes' -f
 expect_block "API key shape is blocked"         src/app.js "$(printf 'const k = "sk\055abcdefghijklmnopqrstuvwx1234";')" '' \
   "$(printf 'sk\055abcdefghijklmnopqrstuvwx1234')"
+expect_block "secret on a line starting with ++"  src/app.txt "$(printf '++ FAKE\137TOKEN\075do-not-use-0000')"
 expect_pass  "kebab-case names pass"            src/app.css '.x { mask-image-linear-gradient: none; } /* risk-assessment-service-module */'
 expect_pass  "lowercase look-alikes pass"       src/app.js 'const s = "akiaabcdefghijklmnop";'
 

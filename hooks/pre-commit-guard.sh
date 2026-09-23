@@ -51,7 +51,9 @@ while IFS= read -r f; do
     printf 'BLOCKED: %s is not admitted by the .gitignore allowlist (force-added?).\n' "$f" >&2
     blocked=1
   fi
-  git -c core.quotePath=false diff --cached -U0 --no-color -- "$f" | grep '^+' | grep -v '^+++' > "$tmp/added"
+  # Only hunk content: the +++ header comes before the first @@, so an added
+  # line that itself starts with ++ is still scanned.
+  git -c core.quotePath=false diff --cached -U0 --no-color -- "$f" | sed -n '/^@@/,$p' | grep '^+' > "$tmp/added"
   n=$(grep -c -E -f "$tmp/builtin" "$tmp/added")
   if [ -s "$tmp/local" ]; then
     n=$((n + $(grep -c -i -E -f "$tmp/local" "$tmp/added")))
