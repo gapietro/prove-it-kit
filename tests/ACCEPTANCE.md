@@ -36,6 +36,10 @@ acceptance app gained a `package.json` (one real test, a lint script that exits 
 `BACKLOG.md` and an old `GRADE.md` in the repo for E6. Raw files are in `acceptance-0.1.1/raw/`
 in the scratch workspace.
 
+**0.1.2 criteria, recorded 2026-09-23 against kit 0.1.1 (test-first):** 2 new criteria (P6, T1)
+from issue #14: **0 pass, 2 fail**. Pending the 0.1.2 fixes; T1 is checked from the file, and P6 must
+pass on a headless build-plan re-run.
+
 How it was run: headless `claude -p` 2.1.280 with `--plugin-dir <kit>`,
 `--setting-sources project`, `--strict-mcp-config`, auto-memory off, a narrow
 `--allowedTools` list per step, and `--resume` for multi-turn skills. It ran in a
@@ -96,13 +100,14 @@ in this repo.
 
 ## build-plan
 
-Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
+Numbered P1–P6 so they don't collide with design-record terms (C1, C2, …).
 
 - **P1** Refuses (a) a record with a blank Approval row and (b) a record with a complete Approval row but one unsigned drift row; accepts a fully signed record.
 - **P2** Shows the plan and waits for approval.
 - **P3** Every story names a gate or `register` (enforced by `file-plan.mjs --check`).
 - **P4** `--dry-run` prints calls and files nothing.
 - **P5** Re-run files nothing new.
+- **P6** Every story that implements a design term has a done-when that requires its tests to name the term id (`C<n>`, or `<Feature> C<n>` with several records). Observable from the plan preview or `plan.json`.
 
 | Date | Kit version | Criterion | Pass/Fail | Evidence |
 |---|---|---|---|---|
@@ -111,6 +116,7 @@ Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
 | 2026-09-23 | 0.1.0 (unreleased) | P3 | Pass | `file-plan.mjs plan.json --check` → `plan OK …`, exit 0. On GitHub: 40 issues (6 epics, 34 stories), every story labelled `gate:*` or `register`, none both. `56-p3-check.txt`, `56-p3-labels.json` |
 | 2026-09-23 | 0.1.0 (unreleased) | P4 | Pass | Dry run printed 71 writes (13 labels, 4 milestones, 40 issues, 14 body edits). Afterwards: `gh issue list` → 0 issues, 0 milestones, no kit labels. `54-bp-t3-dryrun.json`, `.transcript.jsonl` |
 | 2026-09-23 | 0.1.0 (unreleased) | P5 | Pass | The same `--apply` run again: 40 × `unchanged`, no created or updated lines; still 40 issues and 4 milestones. The skill's own Bash calls held no direct `gh issue create`, `gh label` or milestone POST. `57-p5-reapply.txt`, `55-bp-t4-apply.transcript.jsonl` |
+| 2026-09-23 | 0.1.1 | P6 | Fail | Evidence is the 0.1.0 run's plan (`acceptance/raw/plan.json`, preview `52-bp-t1.json`): the 0.1.1 re-run did not re-run build-plan. It holds for 0.1.1 because `git diff v0.1.0-rc.1 v0.1.1 -- skills/build-plan/SKILL.md templates/CLAUDE.md` is empty. Of 34 stories, 25 cite a term id in `doneWhen`; none requires tests to name it (the only "name" hit, KGF.S31, is about masking people's names). The ids appear only as references to the term, for example KGF.S03: "Unit tests pass showing: the signature is the 5 most frequent terms after lowercasing and stop-word removal, sorted (C6); frequency ties break alphabetically (C7); a note with fewer than 5 terms uses the terms it has (C8)." Tests written to that done-when can pass without naming C6–C8, and then grade's `design.terms-tested` counts those terms as untested |
 
 ## grade
 
@@ -193,3 +199,11 @@ For F2 and F4, Pass means the sabotaged suite failed, as it must.
 | 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | Rerun after the same change: `validatePlan` made to start with `return [];`: 40 tests, 26 pass, 14 fail. Restored with `git checkout -- skills/build-plan/file-plan.mjs`: 40 pass, 0 fail. |
 | 2026-09-23 | 0.1.0 (unreleased) | F3 | Pass | Rerun after opt-in `--reopen` was added: `node --test tests/*.test.mjs` on Node v26.5.0: 45 tests, 45 pass, 0 fail. |
 | 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | Rerun after the same change: `validatePlan` made to start with `return [];`: 45 tests, 31 pass, 14 fail. Second sabotage, the reopen call disabled (`if (false && reopen && …)`): 45 tests, 43 pass, 2 fail (the reopen test and the dry-run reopen test). Restored from a copy: 45 pass, 0 fail. |
+
+## templates
+
+- **T1** The starter session protocol (`templates/CLAUDE.md`) tells the builder that every test names the design term it proves, using grade's own definition (the term id as a whole word, `C<n>`, or `<Feature> C<n>` with several records, in a test's name or in a test file).
+
+| Date | Kit version | Criterion | Pass/Fail | Evidence |
+|---|---|---|---|---|
+| 2026-09-23 | 0.1.1 | T1 | Fail | `grep -n -i -E 'term\|test\|C[0-9]' templates/CLAUDE.md` → no output, exit 1: the protocol has no testing rule at all, and never mentions design terms or term ids. Unchanged since 0.1.0-rc.1 (`git diff v0.1.0-rc.1 v0.1.1 -- templates/CLAUDE.md` is empty) |
