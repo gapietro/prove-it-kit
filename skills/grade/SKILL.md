@@ -50,12 +50,13 @@ Arguments given: `$ARGUMENTS` (may be empty).
 
    The shell tool marks a failed command with its non-zero exit code (for
    example `Exit code 1`); a result with no error marker is exit 0. The
-   verdict is that status and nothing else: exit 0 is pass, non-zero is fail.
-   Record the command, the exit status and the last lines of output (errors in
-   full) as evidence. Never decide from the words: output that says `ERROR`
-   with exit 0 is still a pass (quote it in the evidence and point out the
-   contradiction), and output that
-   looks clean with a non-zero exit is a fail. If the status isn't visible
+   verdict comes from that status: non-zero is fail, and exit 0 is pass
+   unless the output contradicts it. Record the command, the exit status and
+   the last lines of output (errors in full) as evidence. The words never make
+   a pass or a fail: output that looks clean with a non-zero exit is a fail.
+   But exit 0 alone isn't enough when the output reports an error (for
+   example `ERROR: Could not find package.json`): the criterion is then
+   **unverified**, with the contradiction quoted as evidence, never a pass. If the status isn't visible
    (the command was denied, timed out or ran in the background), the
    criterion is unverified. A missing check is never a pass.
 3. **Ask before installing.** Never run `now-sdk auth --list` (it prints
@@ -177,7 +178,9 @@ in the workspace, next to the repo, never committed.
   a preview, and is headed that way.
 - Run the build, tests and lint yourself before judging. The verdict is the
   exit status the shell tool reports on the plain command; the output is
-  evidence, never the verdict. No visible status means unverified.
+  evidence, never the verdict. No visible status means unverified, and so
+  does exit 0 with output that reports an error: quote the contradiction,
+  never call it a pass.
 - Score exactly the 18 criteria of step 4, six per dimension. Per-term checks
   are coverage inside a criterion, never criteria of their own.
 - Never run `now-sdk auth --list`. Ask for the alias by name before
