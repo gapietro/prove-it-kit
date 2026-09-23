@@ -43,7 +43,7 @@ Per-term checks feed a single criterion as a coverage ratio, so a design with
 | Code quality | `code.secrets` | The tree and history scan clean (guard patterns; gitleaks if installed) |
 | Readiness | `ready.install` | `now-sdk install --auth <alias>` succeeds (asked first) |
 | Readiness | `ready.real-user` | A cited test, issue or PR comment shows a check done as a non-admin role; otherwise unverified |
-| Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off; cite the property or setting for the rate limit, budget and off switch, file:line |
+| Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off; cite the property or setting for the rate limit, budget and off switch, file:line. If there is no AI call in `src/`, it passes; cite the search that found none (so apps without AI aren't penalised) |
 | Readiness | `ready.config-documented` | Every property and role declared in `src/` is listed with its purpose in `README.md`, `CLAUDE.md` or `RUNBOOK.md`; the design record doesn't count |
 | Readiness | `ready.demo-honest` | Demo data is seeded; no real records; cite the seed records in `src/` |
 | Readiness | `ready.gate-clear` | Zero open blockers for the milestone's gate |
@@ -58,8 +58,10 @@ unverified, never pass.
     test script means no evidence of tests, which must never score better than
     failing tests); `code.secrets` fail.
   - **74:** `design.signed` (including a missing record), `design.terms-tested`,
-    `code.oob` or `ready.ai-bounded` fail; `ready.install` not pass at a
-    milestone whose gate is install or later.
+    `design.gates-evidenced` (a gate criterion not run still caps), `code.oob`
+    or `ready.ai-bounded` fail **or unverified**; `ready.install` not pass at
+    a milestone whose gate is install or later.
+  - A safeguard you can't show is treated like a safeguard that's missing.
 - **Bands:** unchanged from 0.1.0.
 - **Remediation:** one story per failed or unverified criterion (at most 18),
   key `grade.<gate>.<criterion id>`, filed through `file-plan.mjs --reopen`.

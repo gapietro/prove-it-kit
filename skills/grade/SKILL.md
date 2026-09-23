@@ -102,7 +102,7 @@ Arguments given: `$ARGUMENTS` (may be empty).
    | Code quality | `code.secrets` | The tree and history scan clean, by the secrets scan below. Never print the matched text |
    | Readiness | `ready.install` | `now-sdk install --auth <alias>` succeeds (asked first, step 3) |
    | Readiness | `ready.real-user` | A cited test, issue or PR comment shows a check done as a non-admin role; otherwise unverified |
-   | Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off; cite the property or setting for the rate limit, budget and off switch, file:line |
+   | Readiness | `ready.ai-bounded` | Every AI call has a rate limit, a budget and an off switch, and ships switched off; cite the property or setting for the rate limit, budget and off switch, file:line. If there is no AI call in `src/`, it passes; cite the search that found none (so apps without AI aren't penalised) |
    | Readiness | `ready.config-documented` | Every property and role declared in `src/` is listed with its purpose in `README.md`, `CLAUDE.md` or `RUNBOOK.md`. The design record doesn't count |
    | Readiness | `ready.demo-honest` | Demo data is seeded; no real records; cite the seed records in `src/` |
    | Readiness | `ready.gate-clear` | Zero open blockers for the milestone's gate (the open gated issues counted in step 1) |
@@ -131,9 +131,13 @@ Arguments given: `$ARGUMENTS` (may be empty).
    - **Cap 49:** `code.build` fail or unverified; `code.tests` fail or
      unverified (no test script means no evidence of tests, which must never
      score better than failing tests); `code.secrets` fail.
-   - **Cap 74:** `design.signed` fail (including a missing record),
-     `design.terms-tested` fail, `code.oob` fail or `ready.ai-bounded` fail;
-     `ready.install` not pass at a milestone whose gate is install or later.
+   - **Cap 74:** `design.signed` (including a missing record),
+     `design.terms-tested`, `design.gates-evidenced` (a gate criterion not
+     run still caps), `code.oob` or `ready.ai-bounded` fail **or
+     unverified**; `ready.install` not pass at a milestone whose gate is
+     install or later.
+
+   A safeguard you can't show is treated like a safeguard that's missing.
 
    Final score = min(computed score, lowest cap). Bands: 90–100 ready to ship
    the gate; 75–89 ready with named fixes; 50–74 not ready (blocked); 0–49
