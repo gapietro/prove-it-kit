@@ -81,9 +81,12 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 3. Tell the person: plant it on the test instance, ideally someone else does
    it. Then open a **fresh session** in the repo root, with nothing else
    read, and run `/prove-it:handoff diagnose <symptom>`. Open the diagnose
-   session with auto-memory off, or from a fresh clone at a different path,
-   so no memory from the build or plant sessions loads. Then **stop**. Never
-   diagnose in this session.
+   session with auto-memory off (VERIFY the setting name in the Claude Code
+   docs), or from a second clone inside the workspace (for example
+   `<workspace>/diagnose/`, so `..` is still the workspace), so no memory
+   from the build or plant sessions loads. A clone must include the current
+   `RUNBOOK.md`: commit it on the branch first, or copy it in. Then **stop**.
+   Never diagnose in this session.
 
 ### `diagnose`
 
@@ -126,11 +129,12 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    `../drill-notes-<n>.md`, in number order. The drill is over, so you may
    read the cards now.
 2. **Check 3** passes only if a diagnose session found the planted cause from
-   the runbook alone, and the restore is confirmed. Confirmed means a person
-   has filled in the card's "Restored on" line; your own belief doesn't
-   count. Record every attempt from
-   its own notes file. If the first attempt failed, the runbook was fixed, and
-   a fresh second attempt succeeded, record both. Check 3 still passes on the second attempt.
+   the runbook alone, and every planted failure is restored. Restored means a
+   person has filled in the "Restored on" line on **every** drill card; your
+   own belief doesn't count, and one card left blank means NOT READY. Record
+   every attempt from its own notes file. If the first attempt failed, the
+   runbook was fixed, and a fresh second attempt succeeded, record both.
+   Check 3 still passes on the second attempt.
 3. Re-run check 1 and check 2 against the current repo, and don't rely on the
    draft's numbers.
 4. Write `HANDOFF.md` from the template. The verdict is **READY** only if
