@@ -21,6 +21,11 @@ A code review then found that an early, never-planted card blocked `verdict` for
 `fix: handoff — unplanted cards are drafts, not drills`, E3 (replace) and E5 (both variants) were re-run and pass.
 F1–F4 were recorded earlier (below).
 
+**0.1.1 criteria, recorded 2026-09-23 against kit 0.1.0-rc.1 (test-first):** 7 new criteria
+(B6, B7, D7, D8, D9, D10, E6) from `docs/plans/2026-09-23-prove-it-kit-0.1.1-design.md` §4:
+**0 pass, 7 fail**, from the 0.1.0 run's evidence. Pending the 0.1.1 fixes; each must pass on a re-run.
+The 0.1.0 totals above are unchanged.
+
 How it was run: headless `claude -p` 2.1.280 with `--plugin-dir <kit>`,
 `--setting-sources project`, `--strict-mcp-config`, auto-memory off, a narrow
 `--allowedTools` list per step, and `--resume` for multi-turn skills. It ran in a
@@ -57,6 +62,8 @@ in this repo.
 - **B3** Terms are numbered and testable.
 - **B4** Approval row left blank.
 - **B5** `amend` adds a drift row with Signed by blank for every term added or changed, which marks the record unsigned.
+- **B6** Every design-challenge turn contains at most one question to the person.
+- **B7** Before writing, the terms are read back and confirmed; the written record's terms match the confirmed list exactly (same count, same wording).
 
 | Date | Kit version | Criterion | Pass/Fail | Evidence |
 |---|---|---|---|---|
@@ -65,6 +72,8 @@ in this repo.
 | 2026-09-23 | 0.1.0 (unreleased) | B3 | Pass | 96 terms, C1–C96, each a single checkable rule (for example "C50: A prompt contains at most 20 incidents."). The 5 unanswered points are written OPEN (C10, C25, C28, C79, §4 `blocked` rows), not filled in. `DESIGN-KnowledgeGapFinder.unsigned.md` |
 | 2026-09-23 | 0.1.0 (unreleased) | B4 | Pass | §9 left as the template's one blank row, §10 empty; "A person signs this; I don't." The tester signed §9 by hand afterwards. `DESIGN-KnowledgeGapFinder.unsigned.md`, `.signed.md` |
 | 2026-09-23 | 0.1.0 (unreleased) | B5 | Pass | `amend` changed C56 in place (rate limit 10 → 5 per rolling 60 minutes) and added one §10 row with Signed by blank; §9 byte-identical. "The record is unsigned until a person signs the drift row." The tester signed it by hand. `41-amend-t2.json`, diff of `.signed.md` vs `.amended.md` |
+| 2026-09-23 | 0.1.0-rc.1 | B6 | Fail | The skill already said "one question per turn" (step 3). Counting sentences ending in "?" in each turn's final text: 23 of the 28 turns asked more than one, max 8 (`25-dc-t16.json`: budget/rate-limit block, month, rate window, off-switch check and default, in-flight call); `23-dc-t14.json` asked 7. Only t1, t2, t15, t27 and t28 had one or none. `10-dc-t1.json` … `37-dc-t28.json` |
+| 2026-09-23 | 0.1.0-rc.1 | B7 | Fail | A read-back happened: t27 listed 56 terms, C1–C56, and asked "Do you agree with the wording of C1–C56?" (`36-dc-t27.json`). The tester replied "Agreed, except that any term stating more than one rule should be split into separate terms" (`37-dc-t28.transcript.jsonl`). The record was then written with 96 terms, C1–C96 (`DESIGN-KnowledgeGapFinder.unsigned.md`); the split terms were never read back, and two rules not in the read-back were added as their own terms (C69, C72), as t28 itself says (`37-dc-t28.json`). Confirmed 56 ≠ written 96 |
 
 ## build-plan
 
@@ -92,6 +101,13 @@ Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
 - **D4** A release blocker caps the score.
 - **D5** Writes a forecast.
 - **D6** Remediation is proposed as a `plan.json` and filed only via `file-plan.mjs`.
+- **D7** Grade scores the 18-criterion rubric: exactly 6 criteria per dimension, per-term checks shown as `n of m` coverage.
+- **D8** Build and test verdicts come from exit status, shown as evidence.
+- **D9** Grade never runs `now-sdk auth --list`.
+- **D10** Remediation proposes one story per failed or unverified criterion, never more than 18.
+
+D1–D6 were written against 0.1.0's per-project criteria list. From 0.1.1, D7–D10 hold grade to the
+fixed rubric in the 0.1.1 design §2: the same 18 criteria for every project, per-term checks as coverage ratios.
 
 | Date | Kit version | Criterion | Pass/Fail | Evidence |
 |---|---|---|---|---|
@@ -101,6 +117,10 @@ Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
 | 2026-09-23 | 0.1.0 (unreleased) | D4 | Unverified | No real app (honest limit). Caps were listed (49 for `code.build`, 74 for term tests, the AI bounds and the merge criteria) and applied as min(4, 49) = 4. The computed score was already below every cap, so no cap was binding. `GRADE.md` §4 |
 | 2026-09-23 | 0.1.0 (unreleased) | D5 | Unverified | No real app (honest limit). A forecast was written with its arithmetic: 23 after the 7 stories, 32 if the 14 merge terms are built; cap 49 released, 74 left. `GRADE.md` §5 |
 | 2026-09-23 | 0.1.0 (unreleased) | D6 | Unverified | No real app (honest limit). Remediation was proposed as `../plan-grade.json` (1 epic `grade.merge`, 7 stories) and passed `--check`. The tester declined, so nothing was filed (still 40 issues), and filing through the filer was never exercised. The skill proposed 7 stories rather than one per failed criterion (~200), and said so. `62-grade-t3.json`, `63-grade-t4.json` |
+| 2026-09-23 | 0.1.0-rc.1 | D7 | Fail | No fixed rubric. `GRADE.md` §3 scored 120 design criteria (1 signed + 96 per-term `C<n>.built` + 8 table owners + 15 failure modes), 99 code-quality criteria (build, tests, 96 per-term `C<n>.test`, oob; lint not counted) and 9 readiness criteria: 228 in total, not 6 per dimension. The per-term checks are one criterion each, not `n of m`. Score 1 / 0 / 11 → computed and final **4**. `GRADE.md`, `62-grade-t3.json` |
+| 2026-09-23 | 0.1.0-rc.1 | D8 | Fail | The skill already said to record the exit code (step 2). Three attempts to capture it (`now-sdk build; echo "EXIT=$?"`, `now-sdk build 2>&1; echo "EXIT=$?"`, `now-sdk build > /dev/null 2>&1 \|\| echo …`) were denied by the run's `--allowedTools` list (compound commands need approval; a harness limit). The bare `now-sdk build` that ran returned no error status, yet `code.build` was scored **fail** from the `ERROR: Could not find package.json` text. `GRADE.md` gives no exit code, only "The shell reported no non-zero exit code". `61-grade-t2.json` `permission_denials`, `.transcript.jsonl` |
+| 2026-09-23 | 0.1.0-rc.1 | D9 | Fail | The 0.1.0-rc.1 skill tells grade to run it: step 4, "Show `now-sdk auth --list` and the alias from `CLAUDE.md`" (`skills/grade/SKILL.md`). In the run it was attempted (`61-grade-t2.json`) and blocked only because the tester's `--allowedTools` list left it out, so no hosts were printed. The skill text is the failure; the harness hid it |
+| 2026-09-23 | 0.1.0-rc.1 | D10 | Fail | `GRADE.md` scored 226 criteria failed or unverified (119 design, 99 code quality, 8 readiness). `plan-grade.json` proposed 7 stories, all merge-gate criteria, and listed the rest "but not given stories" (§6). Neither one story per failed or unverified criterion nor a list the fixed rubric can bound at 18: the old criteria list made the 18 limit impossible. The skill said "one story per failed or unverified criterion that needs work" (step 9). `plan-grade.json`, `63-grade-t4.json` |
 
 ## handoff
 
@@ -109,6 +129,7 @@ Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
 - **E3** `plant` writes the drill card outside the repo and stops.
 - **E4** `diagnose` refuses when a drill card or design record is in its context, and proceeds when its context is only `RUNBOOK.md` plus the symptom.
 - **E5** `verdict` never softens: given a failed check, the verdict is NOT READY and names that item.
+- **E6** Handoff with no argument reads only its listed inputs.
 
 | Date | Kit version | Criterion | Pass/Fail | Evidence |
 |---|---|---|---|---|
@@ -121,6 +142,7 @@ Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
 | 2026-09-23 | 0.1.0 (unreleased) | E3 | Pass | Re-run after the fix `fix: handoff — unplanted cards are drafts, not drills`. The workspace held one unplanted `../drill-card.md` (blank Planted by). `plant` Grep'd only its "Planted by" line, replaced the card in place (no `drill-card-2.md`) and said so: "The old card's 'Planted by' line was blank, so it was never planted. I replaced it in place". `82-plant-replace.json`, `.transcript.jsonl` |
 | 2026-09-23 | 0.1.0 (unreleased) | E5 | Pass | After the same fix, variant (a): an unplanted `drill-card.md`, a planted and restored `drill-card-2.md`, and a notes file with a passing attempt. Check 3 "passes on the record", and card 1 is "Never planted, ignored; it neither passes nor blocks this check". The verdict is NOT READY only because of checks 1 and 2 (no `src/`, runbook VERIFYs). `80-e5a-verdict.json`, `e5a-HANDOFF.md` |
 | 2026-09-23 | 0.1.0 (unreleased) | E5 | Pass | Same fix, variant (b): as (a), but card 2's "Restored on" is blank. NOT READY, and check 3 fails naming it: "drill card 2 was planted … but the card's 'Restored on' line is blank"; card 1 is still ignored. `81-e5b-verdict.json`, `e5b-HANDOFF.md` |
+| 2026-09-23 | 0.1.0-rc.1 | E6 | Fail | The no-argument session read `docs/DESIGN-KnowledgeGapFinder.md`, both templates and `.gitignore` (which step 4 edits), and also `GRADE.md` and `BACKLOG.md`, which are not among its inputs (design records, `src/`, the templates). The 0.1.0-rc.1 skill never said "read nothing else", so this is also a rule it lacked. `70-handoff-draft.transcript.jsonl` |
 
 ## scripts
 
