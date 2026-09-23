@@ -225,8 +225,9 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-const CLI = new URL('../skills/build-plan/file-plan.mjs', import.meta.url).pathname;
-const FIX = (f) => new URL(`./fixtures/${f}`, import.meta.url).pathname;
+import { fileURLToPath } from 'node:url';
+const CLI = fileURLToPath(new URL('../skills/build-plan/file-plan.mjs', import.meta.url));
+const FIX = (f) => fileURLToPath(new URL(`./fixtures/${f}`, import.meta.url));
 
 test('--check accepts a valid plan', () => {
   const r = spawnSync(process.execPath, [CLI, FIX('plan.valid.json'), '--check'], { encoding: 'utf8' });
