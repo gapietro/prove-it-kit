@@ -110,5 +110,5 @@ record." build-plan reads the terms (§3), the gates (§7) and the signatures
 Where the record lives: it is first written in the workspace
 (`docs/DESIGN-<Feature>.md`). When the app repo is created, move it into the
 repo's `docs/` and append `!/docs/` to the repo's `.gitignore` in the same
-commit (see `templates/CLAUDE.md`, Tracking files). From then on the repo copy
+commit (see `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.md`, Tracking files). From then on the repo copy
 is the only live copy, and `amend` runs from inside the repo.
