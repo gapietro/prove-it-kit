@@ -81,8 +81,9 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 3. Tell the person: plant it on the test instance, ideally someone else does
    it. Then open a **fresh session** in the repo root, with nothing else
    read, and run `/prove-it:handoff diagnose <symptom>`. Open the diagnose
-   session with auto-memory off (VERIFY the setting name in the Claude Code
-   docs), or from a second clone inside the workspace (for example
+   session with auto-memory off (start it with
+   `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` for one session, or set
+   `"autoMemoryEnabled": false` in the project's settings), or from a second clone inside the workspace (for example
    `<workspace>/diagnose/`, so `..` is still the workspace), so no memory
    from the build or plant sessions loads. A clone must include the current
    `RUNBOOK.md`: commit it on the branch first, or copy it in. Then **stop**.
