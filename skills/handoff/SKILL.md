@@ -28,6 +28,18 @@ Run every mode from the app repo root (`git rev-parse --show-toplevel`).
 Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 `${CLAUDE_PLUGIN_ROOT}/templates/HANDOFF.md`. Read them each time.
 
+With no argument, the inputs are exactly:
+- the design records, `docs/DESIGN-*.md`;
+- `src/`;
+- `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
+  `${CLAUDE_PLUGIN_ROOT}/templates/HANDOFF.md`;
+- an existing `RUNBOOK.md` and `HANDOFF.md` draft, if present (a re-run
+  rewrites the draft);
+- `.gitignore`, which step 4 edits.
+
+Read nothing else — not GRADE.md, not BACKLOG.md. The other modes list their
+own inputs in their steps.
+
 ## Steps
 
 ### No argument: checks 1 and 2
@@ -136,6 +148,8 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
    (`../drill-card.md`, `../drill-card-<n>.md`) and every
    `../drill-notes-<n>.md`, in number order. The drill is over, so you may
    read the cards now.
+   For the re-run in step 3, also read `src/`, the design records
+   (`docs/DESIGN-*.md`) and the two templates.
 2. **Check 3.** A card whose "Planted by" line is blank was never planted.
    List it as "never planted, ignored"; it neither passes nor blocks check 3.
    Say that if it was in fact planted, a person must fill in "Planted by" and
@@ -170,6 +184,8 @@ Templates: `${CLAUDE_PLUGIN_ROOT}/templates/RUNBOOK.md` and
 
 - Never soften a verdict. A failed or missing check means NOT READY and names
   the item.
+- With no argument, read only the inputs listed under Input. Read nothing
+  else — not GRADE.md, not BACKLOG.md.
 - Never write READY in a draft.
 - The drill card is written outside the repo. Never commit it.
 - Never plant, change or restore anything on an instance yourself.
