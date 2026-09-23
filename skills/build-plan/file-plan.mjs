@@ -241,11 +241,24 @@ function dryRunner(real) {
 
 export async function main(argv) {
   const [file, mode, ...rest] = argv;
-  if (!file || !['--check', '--dry-run', '--apply'].includes(mode)) {
-    console.error('usage: file-plan.mjs <plan.json> --check | --dry-run | --apply [--backlog <path>]');
-    return 2;
+  const usage = () => { console.error('usage: file-plan.mjs <plan.json> --check | --dry-run | --apply [--backlog <path>]'); return 2; };
+  if (!file || !['--check', '--dry-run', '--apply'].includes(mode)) return usage();
+  let backlogPath = 'BACKLOG.md';
+  for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === '--backlog' && rest[i + 1] && !rest[i + 1].startsWith('--')) { backlogPath = rest[++i]; continue; }
+    return usage();
   }
-  const plan = JSON.parse(readFileSync(file, 'utf8'));
+  let plan;
+  try {
+    plan = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (err) {
+    console.error(`plan rejected: ${err.message}`);
+    return 1;
+  }
+  if (plan === null || typeof plan !== 'object' || !Array.isArray(plan.stories)) {
+    console.error('plan rejected: "stories" must be an array');
+    return 1;
+  }
   const errors = validatePlan(plan);
   if (errors.length) {
     console.error(`plan rejected (${errors.length} problem${errors.length > 1 ? 's' : ''}):\n${errors.map((e) => `  - ${e}`).join('\n')}`);
@@ -261,10 +274,8 @@ export async function main(argv) {
   if (problems.length) { console.error(`read-back failed:\n${problems.map((p) => `  - ${p}`).join('\n')}`); return 1; }
   if (apply) {
     const open = JSON.parse(real(['issue', 'list', '--state', 'open', '--limit', '1000', '--json', 'number,title,labels']));
-    const i = rest.indexOf('--backlog');
-    const path = i >= 0 ? rest[i + 1] : 'BACKLOG.md';
-    writeFileSync(path, backlogMarkdown(open));
-    console.log(`wrote ${path} from ${open.length} open issues`);
+    writeFileSync(backlogPath, backlogMarkdown(open));
+    console.log(`wrote ${backlogPath} from ${open.length} open issues`);
   }
   return 0;
 }

@@ -236,7 +236,7 @@ test('a remediation-only plan adds to the backlog instead of replacing it', () =
 });
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -264,4 +264,26 @@ test('the CLI runs when invoked through a symlink', () => {
   const r = spawnSync(process.execPath, [link, FIX('plan.invalid.json'), '--check'], { encoding: 'utf8' });
   assert.equal(r.status, 1, 'through a symlink the CLI must still run and reject the invalid plan');
   assert.match(r.stderr, /exactly one of a gate or register/);
+});
+const tmpPlan = (text) => { const f = join(mkdtempSync(join(tmpdir(), 'prove-it-')), 'plan.json'); writeFileSync(f, text); return f; };
+test('a plan file that is not valid JSON is rejected without a stack trace', () => {
+  const r = spawnSync(process.execPath, [CLI, tmpPlan('{ not json'), '--check'], { encoding: 'utf8' });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /^plan rejected: /);
+  assert.doesNotMatch(r.stderr, /\n\s+at /, 'no stack trace');
+});
+test('a plan whose stories is not an array is rejected', () => {
+  const r = spawnSync(process.execPath, [CLI, tmpPlan('{"stories": {}}'), '--check'], { encoding: 'utf8' });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /^plan rejected: .*stories/);
+});
+test('--backlog with no path is a usage error', () => {
+  const r = spawnSync(process.execPath, [CLI, FIX('plan.valid.json'), '--check', '--backlog'], { encoding: 'utf8' });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /usage/);
+});
+test('an unknown extra argument is a usage error', () => {
+  const r = spawnSync(process.execPath, [CLI, FIX('plan.valid.json'), '--check', '--bogus'], { encoding: 'utf8' });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /usage/);
 });
