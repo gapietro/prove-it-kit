@@ -17,6 +17,8 @@ recorded as pass or fail from what actually happened.
 **Acceptance run 2026-09-23, kit 0.1.0 (unreleased), sample brief:** 27 criteria (A–E):
 **21 pass, 0 fail, 6 unverified** (D1, D4, D5, D6, E1, E2, as the honest limit requires).
 One criterion failed first and passed after one fix: E3 (fix commit `fix: handoff — E3`).
+A code review then found that an early, never-planted card blocked `verdict` forever. After the fix
+`fix: handoff — unplanted cards are drafts, not drills`, E3 (replace) and E5 (both variants) were re-run and pass.
 F1–F4 were recorded earlier (below).
 
 How it was run: headless `claude -p` 2.1.280 with `--plugin-dir <kit>`,
@@ -116,6 +118,9 @@ Numbered P1–P5 so they don't collide with design-record terms (C1, C2, …).
 | 2026-09-23 | 0.1.0 (unreleased) | E3 | Pass | Re-run after the fix (plant step 2: "Write the card even if the app isn't built or installed yet: mark any step you can't make exact as VERIFY"). Wrote `../drill-card.md` in the workspace (clustering job made inactive; blank Planted by, Planted on and Restored on) and stopped. Repo status identical, nothing changed on any instance. `72-plant-rerun.json`, `drill-card.md` |
 | 2026-09-23 | 0.1.0 (unreleased) | E4 | Pass | Negative: `diagnose` resumed in the plant session refused: "I ran `plant` here: I wrote the drill card … and read the design record" (`73-e4neg-diagnose.json`). A new session that only read `../drill-card.md`, then ran `diagnose`, also refused: "Earlier in this session I read and summarised the drill card" (`77-e4neg2-readcard.json`, `78-e4neg2-diagnose.json`). Positive: a new invocation from `app/` with the symptom only. Tool calls: `git rev-parse`, Read `RUNBOOK.md`, `ls ../drill-notes-*.md`, Write `../drill-notes-1.md`, and no read of a drill card, design record or CONSULT.md. It matched the row "Clusters never refresh, and no 'last run failed'", which is the planted cause. `74-e4pos-diagnose.transcript.jsonl`, `75-…` |
 | 2026-09-23 | 0.1.0 (unreleased) | E5 | Pass | `verdict` with the card unrestored: "**NOT READY**, 2026-09-23", naming check 3 ("the drill card's 'Restored on' line is blank") along with checks 1 and 2. `76-verdict.json`, `HANDOFF.final.md` |
+| 2026-09-23 | 0.1.0 (unreleased) | E3 | Pass | Re-run after the fix `fix: handoff — unplanted cards are drafts, not drills`. The workspace held one unplanted `../drill-card.md` (blank Planted by). `plant` Grep'd only its "Planted by" line, replaced the card in place (no `drill-card-2.md`) and said so: "The old card's 'Planted by' line was blank, so it was never planted. I replaced it in place". `82-plant-replace.json`, `.transcript.jsonl` |
+| 2026-09-23 | 0.1.0 (unreleased) | E5 | Pass | After the same fix, variant (a): an unplanted `drill-card.md`, a planted and restored `drill-card-2.md`, and a notes file with a passing attempt. Check 3 "passes on the record", and card 1 is "Never planted, ignored; it neither passes nor blocks this check". The verdict is NOT READY only because of checks 1 and 2 (no `src/`, runbook VERIFYs). `80-e5a-verdict.json`, `e5a-HANDOFF.md` |
+| 2026-09-23 | 0.1.0 (unreleased) | E5 | Pass | Same fix, variant (b): as (a), but card 2's "Restored on" is blank. NOT READY, and check 3 fails naming it: "drill card 2 was planted … but the card's 'Restored on' line is blank"; card 1 is still ignored. `81-e5b-verdict.json`, `e5b-HANDOFF.md` |
 
 ## scripts
 

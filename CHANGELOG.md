@@ -22,5 +22,7 @@ First version.
 - Guard installed in the kit's own repo.
 - `handoff plant` writes the drill card even before the app is built, marking
   steps it can't make exact as VERIFY (found by the acceptance run, E3).
+- A drill card whose "Planted by" is blank is a draft, not a drill: `plant`
+  replaces it in place, and `verdict` lists it as never planted and ignores it.
 - Acceptance run 0.1.0 recorded in `tests/ACCEPTANCE.md`: 21 pass, 0 fail,
   6 unverified.
