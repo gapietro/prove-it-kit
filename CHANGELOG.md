@@ -1,8 +1,21 @@
 # Changelog
 
-## Unreleased
+## 0.1.3 — 2026-09-26
 
-- Handoff template uses neutral 'receiving team' wording.
+Licenses the kit under MIT and makes the handoff wording neutral. No change to
+skill steps, questions, file names, commands, the guard or its tests.
+
+- `LICENSE`: MIT. `package.json`, `.claude-plugin/plugin.json` and the plugin
+  entry in `.claude-plugin/marketplace.json` declare `"license": "MIT"`. README
+  has a License section, and README, CHANGELOG and the design notes describe
+  the repo as public (#16).
+- `templates/HANDOFF.md`: the Verdict section says the record goes to "the
+  receiving team", and `What PS receives` is now `What the receiving team
+  receives` (#17).
+- `handoff`: step 4 and the READY closing message name the renamed section
+  (#17). A `HANDOFF.md` written by an earlier version keeps the old heading
+  until handoff rewrites it.
+- Plugin and marketplace versions are 0.1.3.
 
 ## 0.1.2 — 2026-09-23
 
