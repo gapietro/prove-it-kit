@@ -146,3 +146,7 @@ It is a seatbelt, not a vault: see Honest limits.
 build or record with (Claude Code, model, Node, now-sdk, gh, gitleaks,
 prove-it) in the table in
 [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md#record-your-versions).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
