@@ -167,7 +167,7 @@ own inputs in their steps.
 4. Write `HANDOFF.md` from the template. The verdict is **READY** only if
    coverage is m of m, check 2 passes and check 3 passes. Anything else is
    **NOT READY**. Date it and name every blocking item. Fill Open items (item ·
-   blocks · owner by role, never by name) and What PS receives.
+   blocks · owner by role, never by name) and What the receiving team receives.
 
 ## Output
 
@@ -203,6 +203,6 @@ missed, fix the runbook, re-plant if needed, and run `diagnose` again in
 another fresh session. It writes the next numbered file. Once the restore is
 confirmed, run `/prove-it:handoff verdict`, which reads every notes file."
 On READY: "Hand the repo, `RUNBOOK.md` and `HANDOFF.md` to the receiving team
-(What PS receives lists it)." On NOT READY: "Close the open items (anything that
+(What the receiving team receives lists it)." On NOT READY: "Close the open items (anything that
 changes scope goes through `/prove-it:design-challenge amend` first), then run
 the failed checks again and `/prove-it:handoff verdict`."

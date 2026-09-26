@@ -953,7 +953,7 @@ if (process.argv[1] && invokedDirectly()) process.exitCode = await main(process.
 
 **Step 5: `templates/RUNBOOK.md`** — headings: Install · Configure (properties, roles) · Verify (a smoke test run as an ordinary user) · Traps · Recovery · **Symptom → cause index** (table: Symptom · Where to look (platform screens, the app's own lists and logs only) · Likely cause · Fix).
 
-**Step 6: `templates/HANDOFF.md`** — headings: Verdict (READY / NOT READY, dated) · Check 1: rationale coverage (n of n, gaps) · Check 2: runbook (link) · Check 3: drill (what was planted, first attempt, runbook fix, second attempt, restore) · Open items (item · blocks · owner by role) · What PS receives.
+**Step 6: `templates/HANDOFF.md`** — headings: Verdict (READY / NOT READY, dated) · Check 1: rationale coverage (n of n, gaps) · Check 2: runbook (link) · Check 3: drill (what was planted, first attempt, runbook fix, second attempt, restore) · Open items (item · blocks · owner by role) · What the receiving team receives.
 
 **Step 7: Commit** — stage each template by path; `git commit -m "feat: templates (allowlist, session protocol, brief, design record, runbook, handoff)"`.
 

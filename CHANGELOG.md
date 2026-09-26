@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Handoff template uses neutral 'receiving team' wording.
+
 ## 0.1.2 — 2026-09-23
 
 Tells the builder how grade counts a term as tested. Fixes #14.

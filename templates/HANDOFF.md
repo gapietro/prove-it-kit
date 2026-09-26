@@ -3,7 +3,7 @@
 ## Verdict
 
 READY or NOT READY, and the date. NOT READY names the items below that block it.
-This record goes to Professional Services (the receiving team).
+This record goes to the receiving team.
 
 ## Check 1: rationale coverage
 
@@ -26,6 +26,6 @@ What was planted, the exact symptom text given to the diagnose session, the firs
 | Item | Blocks | Owner (by role) |
 |---|---|---|
 
-## What PS receives
+## What the receiving team receives
 
-The repo, documents and access Professional Services gets, one line each.
+The repo, documents and access the receiving team gets, one line each.
