@@ -4,9 +4,9 @@
 plan, grade, handoff — for building ServiceNow apps with AI, behind inspections.*
 
 - **Status:** design validated 2026-09-23 (brainstorming). Not started.
-- **Repo:** `gapietro/prove-it-kit`, **private until employer approval**, then public.
+- **Repo:** `gapietro/prove-it-kit`, public.
 - **Consumers:** the YouTube series *Build it with AI, prove it works*
-  (production repo `gapietro/change-risk-series`), whose scripts fix this kit's
+  (the series production repo (private)), whose scripts fix this kit's
   interface; later, any ServiceNow developer.
 - **Sources:** the author's `PRINCIPLES.md`, the Agentic Development deck, the
   series design and production bible. **Clean-room:** written from those only;

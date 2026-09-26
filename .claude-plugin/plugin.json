@@ -4,5 +4,6 @@
   "version": "0.1.2",
   "author": { "name": "gapietro" },
   "repository": "https://github.com/gapietro/prove-it-kit",
+  "license": "MIT",
   "keywords": ["servicenow", "now-sdk", "fluent", "process", "review", "skills"]
 }
