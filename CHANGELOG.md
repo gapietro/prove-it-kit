@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.2 — 2026-09-23 (private)
+## 0.1.2 — 2026-09-23
 
 Tells the builder how grade counts a term as tested. Fixes #14.
 
@@ -23,7 +23,7 @@ Tells the builder how grade counts a term as tested. Fixes #14.
 - README: the grade rows say up front how a term counts as tested; the
   build-plan row says term stories ask for term-named tests.
 
-## 0.1.1 — 2026-09-23 (private)
+## 0.1.1 — 2026-09-23
 
 Acceptance notes: B6 passes on a question count (each read-back counts as its turn's one question); two turns still join close asks. B7 passes on the final file after one self-corrected write. Both are tracked in #3.
 
@@ -73,9 +73,9 @@ Fixes the skill-quality gaps the 0.1.0 acceptance run found. Fixes #8.
 
 ## 0.1.0-rc.1 — 2026-09-23 (release candidate, private)
 
-First version. Tagged `v0.1.0-rc.1`. Not yet public: publishing waits for
-employer approval, and the skill-quality gaps in issue #8 are due before the
-series records. Acceptance run: 21 pass, 0 fail, 6 unverified (the six need a
+First version. Tagged `v0.1.0-rc.1`. Released while the repo was still private;
+the skill-quality gaps in issue #8 were due before the series records.
+Acceptance run: 21 pass, 0 fail, 6 unverified (the six need a
 real app; see `tests/ACCEPTANCE.md`).
 
 - Five skills: `consult`, `design-challenge` (with `amend`), `build-plan`,
