@@ -1,6 +1,6 @@
 ---
 name: design-challenge
-description: Use after CONSULT.md exists and before anything is built, or when a signed design needs a change, to challenge the person's design one question at a time and write docs/DESIGN-<Feature>.md from the kit's DESIGN.md template, left unsigned for a person to sign.
+description: Use after CONSULT.md exists and before anything is built, or when a signed design needs a change, to challenge the person's design one question at a time and write docs/DESIGN-<Feature>.md from the kit's DESIGN.md template, signed with the person's confirmation of the read-back.
 ---
 
 # design-challenge
@@ -91,12 +91,18 @@ ask one question and say you'll ask the rest one per turn.
    ("no need to show me") is not a confirmation either. Make the change, read
    the whole new list back with its count, and ask again. Never write the old
    list and never write the changed list unconfirmed.
-7. **Write** `docs/DESIGN-<Feature>.md` with the template's sections 1–10, in
+7. **Name for the approval.** After a clean confirmation (not one with
+   conditions, and not a waived read-back), ask one question: "What name and
+   role go on the approval?" That is this turn's one question. Their
+   confirmation is the signature; this only records whose it is.
+8. **Write** `docs/DESIGN-<Feature>.md` with the template's sections 1–10, in
    order, with the template's headings. Anything the person did not answer is
    written as `OPEN` — never fill it with your own design. §3 holds exactly
-   the confirmed list: the same count and the same wording. Leave §9 Approval
-   exactly as the template has it (one blank row) and §10 Drift log empty.
-8. Tell the person: "A person signs this; I don't." Then give the hand-off.
+   the confirmed list: the same count and the same wording. Fill §9
+   Approval's one row with the name and role they gave, today's date, and
+   their name again as the signature. Leave §10 Drift log empty.
+9. Tell the person: "Your confirmation signs it: §9 has your name." Then give
+   the hand-off.
 
 ### Amend mode (`amend [record]`)
 
@@ -105,25 +111,28 @@ B. Propose a new term `C<n+1>` (n = the highest existing term number), or a
    change to an existing term in place. Never renumber or delete terms; a
    withdrawn term is changed to say it is withdrawn. Before writing, read back
    every added or changed term, numbered, in the exact wording, and ask:
-   "Confirm these N terms, or correct any." If the person changes anything,
+   "Confirm these N terms, or correct any." If §10 already has rows whose
+   Signed by is blank, read their terms back in the same list, so the
+   confirmation covers them too. If the person changes anything,
    read the new list back again before writing. As in step 6, a confirmation
    with conditions, or a waived read-back, is not a confirmation. Write exactly the confirmed
    terms.
-C. For **every** term added or changed, add a row to §10 Drift log: today's
-   date, the term number, the ruling (what changed and why), and **Signed by
-   left blank**. Per the template, the record is now unsigned until a person
-   fills in Signed by.
+C. After a clean confirmation, ask once: "What name and role go on the
+   approval?" Then, for **every** term added or changed, add a row to §10
+   Drift log: today's date, the term number, the ruling (what changed and
+   why), and Signed by filled with the name they gave. Fill any older blank
+   Signed by cell, whose term was in the read-back, with the same name.
 D. Leave §9 Approval untouched. Update other sections only where the change
    requires it (for example a new failure mode in §5).
-E. Say: "The record is unsigned until a person signs the drift row. A person
-   signs this; I don't."
+E. Say: "Your confirmation signs the drift rows."
 
 ## Output
 
 `docs/DESIGN-<Feature>.md` in the current directory, built from
 `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md`: sections 1–10 in the template's
-order and headings, terms numbered C1…, §9 Approval blank, §10 Drift log empty
-(new record) or with one unsigned row per changed term (amend).
+order and headings, terms numbered C1…, §9 Approval filled from the person's
+confirmation, §10 Drift log empty (new record) or with one signed row per
+changed term (amend).
 
 ## Rules you can't break
 
@@ -136,8 +145,10 @@ order and headings, terms numbered C1…, §9 Approval blank, §10 Drift log emp
   proposing it in a read-back, never silently.
 - A confirmation with conditions, or a waived read-back, is not a
   confirmation. This holds in amend mode too.
-- Never fill in §9 Approval or any Signed by cell, not even with a placeholder
-  such as a name, "pending" or "Claude".
+- Fill §9 Approval and Signed by cells only after a clean confirmation, and
+  only with the name and role the person gives when asked. Never a
+  placeholder, never "Claude", never a name taken from git, GitHub or
+  anywhere else.
 - In amend mode, every added or changed term gets its own drift row.
 - Terms are single, testable rules, numbered C1, C2, … and never renumbered.
 - Keep rejected alternatives, each with its reason.
@@ -147,9 +158,7 @@ order and headings, terms numbered C1…, §9 Approval blank, §10 Drift log emp
 
 ## Hand-off
 
-"Next: once a person has signed §9 (and every drift row), run
-`/prove-it:build-plan docs/DESIGN-<Feature>.md`. It refuses an unsigned
-record." build-plan reads the terms (§3), the gates (§7) and the signatures
+"Next: run `/prove-it:build-plan docs/DESIGN-<Feature>.md`." build-plan reads the terms (§3), the gates (§7) and the signatures
 (§9, §10).
 
 Where the record lives: it is first written in the workspace

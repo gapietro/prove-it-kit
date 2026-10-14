@@ -35,8 +35,9 @@ Arguments given: `$ARGUMENTS` (may be empty).
    and §10 Drift log, and apply the signing rule in the template's §9. Header
    and separator rows are not data rows. If the record is unsigned, stop. Say the record is unsigned and name the exact gap,
    for example "§9 Approval: Date and Signature are empty" or "§10 Drift log,
-   row 2 (C4): Signed by is empty". Say: "A person signs this; I don't. Run me
-   again once it is signed." Draft nothing and run nothing.
+   row 2 (C4): Signed by is empty". Say: "Run `/prove-it:design-challenge amend`
+   on it and confirm the read-back: your confirmation signs it. Then run me
+   again." Draft nothing and run nothing.
 2. **Read the record.** Take §3 Terms (C1…), §7 Gates and their pass criteria,
    §5 Failure modes, and anything the record puts out of scope (§3, §8). Note
    any `OPEN` item; it becomes a story or an open question, never a guess.
@@ -153,4 +154,4 @@ Arguments given: `$ARGUMENTS` (may be empty).
 "Next: start the top p0 story on its own branch. Session open reads
 `BACKLOG.md` and `SESSION-NOTE.md` (see `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.md`). At a milestone,
 run `/prove-it:grade <milestone>`." A new ask re-enters at
-`/prove-it:design-challenge amend`, then comes back here once it is signed.
+`/prove-it:design-challenge amend`, then comes back here.
