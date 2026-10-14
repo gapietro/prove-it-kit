@@ -106,14 +106,19 @@ ask one question and say you'll ask the rest one per turn.
 
 ### Amend mode (`amend [record]`)
 
-A. Read the record. Ask what changed and why, one question at a time.
+A. Read the record. Note what is unsigned: a §9 Approval row with an empty
+   cell, and every §10 row whose Signed by is blank. Ask what changed and why,
+   one question at a time. "Nothing new" is a valid answer: then the amend
+   only signs what is unsigned. If nothing changed and nothing is unsigned,
+   say the record needs no amend, and stop.
 B. Propose a new term `C<n+1>` (n = the highest existing term number), or a
    change to an existing term in place. Never renumber or delete terms; a
    withdrawn term is changed to say it is withdrawn. Before writing, read back
    every added or changed term, numbered, in the exact wording, and ask:
-   "Confirm these N terms, or correct any." If §10 already has rows whose
-   Signed by is blank, read their terms back in the same list, so the
-   confirmation covers them too. If the person changes anything,
+   "Confirm these N terms, or correct any." Read every unsigned item back in
+   the same list, so the confirmation covers it: the term of each §10 row
+   whose Signed by is blank, and "§9 Approval" if its row has an empty cell.
+   If nothing changed, the list holds only these. If the person changes anything,
    read the new list back again before writing. As in step 6, a confirmation
    with conditions, or a waived read-back, is not a confirmation. Write exactly the confirmed
    terms.
@@ -121,10 +126,12 @@ C. After a clean confirmation, ask once: "What name and role go on the
    approval?" Then, for **every** term added or changed, add a row to §10
    Drift log: today's date, the term number, the ruling (what changed and
    why), and Signed by filled with the name they gave. Fill any older blank
-   Signed by cell, whose term was in the read-back, with the same name.
-D. Leave §9 Approval untouched. Update other sections only where the change
-   requires it (for example a new failure mode in §5).
-E. Say: "Your confirmation signs the drift rows."
+   Signed by cell, whose term was in the read-back, with the same name. If
+   "§9 Approval" was in the read-back, fill its row: the name and role they
+   gave, today's date, and the name again as the signature.
+D. Leave a complete §9 row untouched. Update other sections only where the
+   change requires it (for example a new failure mode in §5).
+E. Say: "Your confirmation signs it."
 
 ## Output
 

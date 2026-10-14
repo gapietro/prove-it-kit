@@ -11,8 +11,9 @@ no separate sign-off step (#19).
   §9 blank and say "A person signs this; I don't."
 - `design-challenge amend`: after the confirmation it asks the same question
   and fills Signed by on each new drift row. Older drift rows with Signed by
-  blank are read back in the same list and filled too, so a record left
-  unsigned by an earlier version can be signed by confirming it.
+  blank, and a §9 row with an empty cell, are read back in the same list and
+  filled too. "Nothing new" is a valid answer, so a record left unsigned by
+  an earlier version is signed by running `amend` and confirming it.
 - Unchanged: a confirmation with conditions, or a waived read-back, still
   signs nothing. The name comes only from the person's answer, never from
   git or GitHub. The signing rule in `templates/DESIGN.md` §9 (a complete
