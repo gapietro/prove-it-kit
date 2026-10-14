@@ -6,14 +6,14 @@ A Claude Code plugin for building ServiceNow apps with AI, where every stage
 has to prove itself before the next one starts. It has five stages. **Consult**
 reviews a brief and decides, for each capability, whether it is plain code, a
 Now Assist skill or an agent. **Design challenge** questions your design one
-point at a time and writes it up as a design record that a person signs.
+point at a time and writes it up as a design record, signed by the person's confirmation.
 **Build plan** turns a signed record into milestones, epics and stories on
 GitHub. **Grade** scores the build at each milestone, with the arithmetic
 shown, and caps the score when something blocks release. **Handoff** proves
 that someone who didn't build the app can run it: it checks every record has a
 reason, writes a runbook, and runs a drill: a person plants a realistic
 failure, and a fresh session diagnoses it from the runbook alone. The AI does the
-work. A person designs, signs and approves.
+work. A person designs, confirms and approves.
 
 ## Install
 
@@ -87,7 +87,7 @@ It is a seatbelt, not a vault: see Honest limits.
 | Script asks | Kit answer |
 |---|---|
 | `/prove-it:consult` argument form, output location, asks first? | Optional brief path. Default: the single file in `brief/`, and it asks if there are none or several. Writes `CONSULT.md` in the workspace root, never in an app repo. Restates the brief in five bullets or fewer and waits for the literal reply "confirmed" first |
-| `/prove-it:design-challenge` input | Optional consult path. Default `./CONSULT.md`, then `../CONSULT.md`, and it asks if neither exists. One question per turn, even when asked for all of them at once. Before writing, it reads every term back, numbered, and asks "Confirm these N terms, or correct any."; the record holds exactly the confirmed list. `amend [record]` changes a signed record, reading back the added or changed terms the same way: each gets a drift-log row with Signed by left blank, which leaves the record unsigned until a person signs |
+| `/prove-it:design-challenge` input | Optional consult path. Default `./CONSULT.md`, then `../CONSULT.md`, and it asks if neither exists. One question per turn, even when asked for all of them at once. Before writing, it reads every term back, numbered, and asks "Confirm these N terms, or correct any."; the record holds exactly the confirmed list. After the confirmation it asks once, "What name and role go on the approval?", and fills §9 with the answer. `amend [record]` changes a signed record, reading back the added or changed terms the same way: after the confirmation it asks once for the name and role, and each gets a drift-log row with Signed by filled with that name |
 | Template file names | `templates/gitignore.allowlist`, `templates/CLAUDE.md`, `templates/DESIGN.md`, `templates/BRIEF.md`, `templates/RUNBOOK.md`, `templates/HANDOFF.md`; the guard is `hooks/pre-commit-guard.sh` |
 | Guard install line | `cp <kit>/hooks/pre-commit-guard.sh "$(git rev-parse --git-path hooks)/pre-commit"` then `chmod +x "$(git rev-parse --git-path hooks)/pre-commit"` (`<kit>` = a local clone of this repo) |
 | How the allowlist re-admits a folder | `!/folder/` after `/*`, appended at the end of `.gitignore` when first needed; never `git add -f` |
@@ -142,7 +142,7 @@ It is a seatbelt, not a vault: see Honest limits.
 
 ## Versions
 
-0.1.3 (public; tag `v0.1.3`). See [CHANGELOG.md](CHANGELOG.md). Record the versions you
+0.1.4 (public; tag `v0.1.4`). See [CHANGELOG.md](CHANGELOG.md). Record the versions you
 build or record with (Claude Code, model, Node, now-sdk, gh, gitleaks,
 prove-it) in the table in
 [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md#record-your-versions).

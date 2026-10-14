@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.4 — 2026-10-14
+
+The person's confirmation of the read-back signs the design record. There is
+no separate sign-off step (#19).
+
+- `design-challenge`: after a clean "Confirmed." it asks one question, "What
+  name and role go on the approval?", and writes §9 Approval with that name
+  and role, the date, and the name again as the signature. It used to leave
+  §9 blank and say "A person signs this; I don't."
+- `design-challenge amend`: after the confirmation it asks the same question
+  and fills Signed by on each new drift row. Older drift rows with Signed by
+  blank, and a §9 row with an empty cell, are read back in the same list and
+  filled too. "Nothing new" is a valid answer, so a record left unsigned by
+  an earlier version is signed by running `amend` and confirming it.
+- Unchanged: a confirmation with conditions, or a waived read-back, still
+  signs nothing. The name comes only from the person's answer, never from
+  git or GitHub. The signing rule in `templates/DESIGN.md` §9 (a complete
+  row, every drift row filled, the placeholder list) is word for word the
+  same, so `build-plan` and `grade` check it exactly as before.
+- `templates/DESIGN.md` §9 and §10 say who fills the cells and when.
+- `build-plan`: an unsigned record is still refused. The message now points
+  to `/prove-it:design-challenge amend` instead of "A person signs this".
+- Plugin and marketplace versions are 0.1.4.
+
 ## 0.1.3 — 2026-09-26
 
 Licenses the kit under MIT and makes the handoff wording neutral. No change to

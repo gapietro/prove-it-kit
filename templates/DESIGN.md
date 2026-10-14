@@ -46,7 +46,7 @@ One row per gate this feature touches. Gate is one of merge, install, demo, hand
 
 ## 9. Approval
 
-A person fills this in; a skill never does. The record is signed only when this table has a complete row and every drift-log row has Signed by filled in. A cell holding only a placeholder (TBD, pending, -, n/a, ?, Claude, or template text in <…>) counts as empty. An empty drift log passes. If any of this fails, the record is unsigned.
+The person's confirmation signs it: once they confirm the read-back, `design-challenge` fills this row with the name and role they give, the date, and their name as the signature. The record is signed only when this table has a complete row and every drift-log row has Signed by filled in. A cell holding only a placeholder (TBD, pending, -, n/a, ?, Claude, or template text in <…>) counts as empty. An empty drift log passes. If any of this fails, the record is unsigned.
 
 | Name | Role | Date | Signature |
 |---|---|---|---|
@@ -54,7 +54,7 @@ A person fills this in; a skill never does. The record is signed only when this 
 
 ## 10. Drift log
 
-Every change to a term after signing. `amend` adds a row with Signed by left blank, which marks the record for re-signing until a person fills it in.
+Every change to a term after signing. `amend` adds a row per changed term and, once the person confirms the change, fills Signed by with the name they give. A row with Signed by blank leaves the record unsigned.
 
 | Date | Term | Ruling | Signed by |
 |---|---|---|---|
