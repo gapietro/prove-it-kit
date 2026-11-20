@@ -46,6 +46,18 @@ P1 and P4 were re-checked and pass. Review then found that a term decided only b
 "none missing". After a fix, P6 was re-run and passes, with C85 listed as "pending ruling, no test yet". Raw files are in
 `acceptance-0.1.2/raw/` in the scratch workspace.
 
+**0.2.0, as-built, 2026-11-20, kit 0.2.0 (unreleased), on a real app:** 7 new criteria (G1–G7): **7 pass, 0 fail,
+0 unverified**. Unlike the sample-brief dry run, this ran on a built and installed now-sdk app with an AI agent
+(an HR case router: 67 declared records, a signed design record of over 200 terms), read through a now-sdk alias.
+Four headless runs: light, light, full, light. Two changes to the skill came from looking at the output, not from a
+failed criterion: the first light run's pieces diagram drew, with 26 arrows nobody could read, so the skill now
+limits the arrows, draws only starts, calls and writes, and puts supporting pieces in one group; and the release
+property returns no row on some instances, so the skill now says "release not read". The last light run used the
+final text. Harness: `claude -p` 2.1.326 with `--plugin-dir <kit>`, `--setting-sources project`, `--strict-mcp-config`,
+and `--allowedTools` Read, Glob, Grep, Write, Edit, `Bash(now-sdk query:*)`, `Bash(git rev-parse:*)`, `Bash(node:*)`,
+`Bash(ls:*)`, `Bash(mkdir:*)`. Raw transcripts and documents are in `proof/raw/` in the scratch workspace, not in
+this repo. **Not run:** an interactive session, auto mode, Windows, and an app with no AI in it.
+
 How it was run: headless `claude -p` 2.1.280 with `--plugin-dir <kit>`,
 `--setting-sources project`, `--strict-mcp-config`, auto-memory off, a narrow
 `--allowedTools` list per step, and `--resume` for multi-turn skills. It ran in a
@@ -194,11 +206,31 @@ For D8: build, test and lint verdicts come from exit status per the verdict rule
 | 2026-09-23 | 0.1.1 (unreleased) | E5 | Pass | The tester marked the card planted (Planted by, Planted on) and left Restored on blank. `verdict` → "**NOT READY**, 2026-09-23", naming "the planted failure on drill card 1 has no 'Restored on' entry", with checks 1 and 2. `99-verdict.json`, `HANDOFF.final.md` |
 | 2026-09-23 | 0.1.1 (unreleased) | E6 | Pass | No-argument handoff with `GRADE.md` and `BACKLOG.md` committed in the repo. Reads: `.gitignore`, `templates/RUNBOOK.md`, `templates/HANDOFF.md`, `docs/DESIGN-KnowledgeGapFinder.md`, `src/signature.mjs`, `src/signature.test.mjs`, plus name-only listings (`ls`). No read of `GRADE.md` or `BACKLOG.md`. `95-handoff-draft.transcript.jsonl` |
 
+## as-built
+
+- **G1** The light run writes `docs/AS-BUILT.md` with the four light sections and exactly two diagrams, builds `docs/AS-BUILT.html`, and `build-page.mjs --check` passes.
+- **G2** The full run writes the nine sections, with all five subsections of The agent and of Data flows filled from the app, and `--check` passes.
+- **G3** Read only: the instance is touched through `now-sdk query` alone. No install, build, script or other `now-sdk` command, and no change to any tracked file.
+- **G4** Every diagram draws in a headless browser.
+- **G5** No instance hostname in either file.
+- **G6** Differences from the design record are listed with file and line, and the design record and `src/` are unchanged.
+- **G7** It reads only its inputs: `src/`, `now.config.json`, the design record, the template and `.gitignore`. Not `GRADE.md`, `RUNBOOK.md`, `HANDOFF.md`, `BACKLOG.md`, the session note or an earlier `AS-BUILT.md`.
+
+| Date | Kit version | Criterion | Pass/Fail | Evidence |
+|---|---|---|---|---|
+| 2026-11-20 | 0.2.0 (unreleased) | G1 | Pass | Run 4 (final skill text), `/prove-it:as-built <alias>`: 4 min 56 s. "AS-BUILT.md: light, 2 diagrams; page is current". The pieces: 11 boxes on the spine, 11 arrows, 5 supporting pieces grouped under "Also in the app". Runs 1 and 2 (earlier text) also passed the builder, in 4 min 28 s and 4 min 9 s. `04-light.transcript.jsonl`, `04-light.AS-BUILT.md` |
+| 2026-11-20 | 0.2.0 (unreleased) | G2 | Pass | Run 3, `/prove-it:as-built full <alias>`: 7 min 1 s. "AS-BUILT.md: full, 10 diagrams; page is current". The agent: the workflow, no trigger (0 trigger rows on the instance), the run-as account, the instructions quoted with file and lines, three tools with reads, writes and refusals, 14 guardrail rows, and what reaches the model by field name. Data flows: one record's path, six other paths, a table matrix of nine tables, a state diagram, the cross-scope rows. `03-full.AS-BUILT.md` |
+| 2026-11-20 | 0.2.0 (unreleased) | G3 | Pass | Across the four transcripts, every instance call is `now-sdk query` (14, 20, 23 and 18 calls). No other `now-sdk` command, no `git` write. After each run `git status --short` shows only `?? docs/AS-BUILT.html` and `?? docs/AS-BUILT.md` |
+| 2026-11-20 | 0.2.0 (unreleased) | G4 | Pass | The builder's draw check ran in headless Chrome in every run and reported no failure: 2, 2, 10 and 2 diagrams. In run 4 the builder ran twice: the skill corrected the document after the first build's report |
+| 2026-11-20 | 0.2.0 (unreleased) | G5 | Pass | `grep -c -i service-now` on the documents and the full page: 0. Each names the alias only |
+| 2026-11-20 | 0.2.0 (unreleased) | G6 | Pass | Light: 5 rows and "a full run would list 1 more". Full: 14 rows. The first in both: the design's transfer to a new service (C111 to C118) against a branch that moves nothing, with its file and line. The full run also found a tool returning text to the agent that two terms say it must not see. `docs/DESIGN-*.md` and `src/` unchanged (G3's status) |
+| 2026-11-20 | 0.2.0 (unreleased) | G7 | Pass | Reads in each transcript: the template, `now.config.json`, files under `src/`, `docs/DESIGN-<Feature>.md`, and in run 4 `.gitignore`. The repo also held `BACKLOG.md`, a session note, an LLD and a decisions file: none was read. The full run's `ls` named `RUNBOOK.md` and `HANDOFF.md` and read neither. Each run started with no `AS-BUILT.md` in `docs/`, so "never reads an earlier one" was not put to the test: **unverified for that part** |
+
 ## scripts
 
 - **F1** Guard tests pass.
 - **F2** Guard sabotage run fails.
-- **F3** Filer tests pass.
+- **F3** Filer tests pass. From 0.2.0, the same command also runs the page builder's tests.
 - **F4** Filer sabotage run fails.
 
 For F2 and F4, Pass means the sabotaged suite failed, as it must.
@@ -213,6 +245,8 @@ For F2 and F4, Pass means the sabotaged suite failed, as it must.
 | 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | Rerun after the same change: `validatePlan` made to start with `return [];`: 40 tests, 26 pass, 14 fail. Restored with `git checkout -- skills/build-plan/file-plan.mjs`: 40 pass, 0 fail. |
 | 2026-09-23 | 0.1.0 (unreleased) | F3 | Pass | Rerun after opt-in `--reopen` was added: `node --test tests/*.test.mjs` on Node v26.5.0: 45 tests, 45 pass, 0 fail. |
 | 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | Rerun after the same change: `validatePlan` made to start with `return [];`: 45 tests, 31 pass, 14 fail. Second sabotage, the reopen call disabled (`if (false && reopen && …)`): 45 tests, 43 pass, 2 fail (the reopen test and the dry-run reopen test). Restored from a copy: 45 pass, 0 fail. |
+| 2026-11-20 | 0.2.0 (unreleased) | F3 | Pass | `node --test tests/*.test.mjs` on Node v26.5.0, with Chrome present: the page builder's 45 tests pass with the filer's, none skipped; `sh tests/guard.test.sh`: 19 passed, 0 failed. |
+| 2026-11-20 | 0.2.0 (unreleased) | F4 | Pass | `checkDocument` made to collect no errors: the page builder's 45 tests, 18 pass, 27 fail. Restored from a copy: 45 pass. |
 
 ## templates
 
