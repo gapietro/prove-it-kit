@@ -102,6 +102,26 @@ The template says what goes in each. A section with nothing to show says
      `sn_aia_tool`; triggers `sn_aia_trigger_configuration`; cross-scope
      privileges `sys_scope_privilege`. For a kind not listed, or a table name
      the instance refuses, write "Not checked: <why>". Never guess a table.
+   - **Where an agent's and a workflow's "active" is kept.** Not on their
+     own tables: `sn_aia_agent` and `sn_aia_usecase` have no `active`
+     column. Read it from the config row beside each, and ask for these
+     fields:
+     - an AI agent: `sn_aia_agent_config`, query
+       `agent.sys_scope.scope=<scope>`, fields `agent.name,active`;
+     - an agentic workflow: `sn_aia_usecase_config_override`, query
+       `usecase_configuration.sys_scope.scope=<scope>`, fields
+       `usecase_configuration.name,active`;
+     - a tool's link to its agent: `sn_aia_agent_tool_m2m`, query
+       `agent.sys_scope.scope=<scope>`, fields `tool.name,active`. The tool
+       itself has `active` on `sn_aia_tool`.
+
+     The piece's row then names both tables: "Found, `sn_aia_agent`; active,
+     `sn_aia_agent_config`". With no config row, say so: "no config row, so
+     its active state is not shown".
+   - **A field missing from the rows means the table has no such column.**
+     `now-sdk query` leaves out a field the table lacks, without a word.
+     Never read that as inactive, and never as active: write "no `active`
+     column on this table", and look for where the state is kept.
    - A property's "Value as installed" is its value on the instance. Never
      record a value that looks like a password, token or key: write "set" or
      "empty".

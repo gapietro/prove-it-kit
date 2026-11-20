@@ -65,6 +65,12 @@ under the policy. The skill's text gained the builder's rules, and a fifth run (
 and builder: built on the first try, both diagrams drew under the policy, `--check` passes, 16 `now-sdk query` calls
 and no other instance call (`05-light.transcript.jsonl`).
 
+**After 0.2.1, 2026-11-20 (#27):** a sixth run (light, 3 min 35 s) with the skill told where an agent's and a
+workflow's active state is kept. The first five runs each wrote "the query returned no active field" for both. This one
+wrote "Found, `sn_aia_usecase`; active, `sn_aia_usecase_config_override`" and "Found, `sn_aia_agent`; active,
+`sn_aia_agent_config`", and each tool's link as active in `sn_aia_agent_tool_m2m`. 19 `now-sdk query` calls, no other
+instance call; `--check` passes (`06-light.transcript.jsonl`, `06-light.AS-BUILT.md`).
+
 How it was run: headless `claude -p` 2.1.280 with `--plugin-dir <kit>`,
 `--setting-sources project`, `--strict-mcp-config`, auto-memory off, a narrow
 `--allowedTools` list per step, and `--resume` for multi-turn skills. It ran in a

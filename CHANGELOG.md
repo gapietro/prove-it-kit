@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- `as-built`: an AI agent's and an agentic workflow's active state is read
+  from where the platform keeps it, `sn_aia_agent_config` and
+  `sn_aia_usecase_config_override`, and a tool's link to its agent from
+  `sn_aia_agent_tool_m2m`. Their own tables have no `active` column, so
+  every run reported the state as unknown (#27). A field a query leaves out
+  is now reported as "no such column", never as inactive.
+
 ## 0.2.1 — 2026-11-20
 
 - `as-built` page: bold and italic now work around inline code. A phrase such
