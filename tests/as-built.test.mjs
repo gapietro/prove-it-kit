@@ -288,6 +288,12 @@ test('the skill names the builder, the template and both modes', () => {
   }
   for (const s of [...FULL_SECTIONS, ...Object.values(FULL_SUBSECTIONS).flat()]) assert.ok(skill.includes(s), `SKILL.md never names "${s}"`);
 });
+test('the skill says where an agent\'s and a workflow\'s active state is kept (#27)', () => {
+  const skill = readFileSync(here('../skills/as-built/SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+  for (const s of ['`sn_aia_agent_config`', '`sn_aia_usecase_config_override`', '`sn_aia_agent_tool_m2m`', '`sn_aia_agent` and `sn_aia_usecase` have no `active` column', 'A field missing from the rows means the table has no such column']) {
+    assert.ok(skill.includes(s), `SKILL.md lacks: ${s}`);
+  }
+});
 test('the vendored library is the version its notice names', () => {
   const notice = readFileSync(here('../skills/as-built/vendor/README.md'), 'utf8');
   const version = notice.match(/mermaid (\d+\.\d+\.\d+)/)?.[1];
