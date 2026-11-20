@@ -1,11 +1,21 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-11-20
 
 - `as-built` page: bold and italic now work around inline code. A phrase such
   as `**Not checked: the user \`hr.router\`**` kept its asterisks on the
   page (#23). The Markdown was always right: build the page again to fix a
   page already made.
+- Tests only: the two tests that need a browser to draw ask once more when
+  the browser gave no page in time, which failed CI once on a slow start
+  (#25). A diagram that can't be drawn still fails at once. The builder is
+  unchanged: for it, a slow browser is "drawing not checked", never a failure.
+- Plugin and marketplace versions are 0.2.1.
+
+**To update an installed kit:** `/plugin marketplace update prove-it`, then
+`/plugin update prove-it@prove-it`, and restart Claude Code. If you installed
+from a pinned tag, add the marketplace again at the new tag:
+`/plugin marketplace add <owner>/prove-it-kit#v0.2.1`.
 
 ## 0.2.0 — 2026-11-20
 
