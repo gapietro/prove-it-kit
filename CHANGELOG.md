@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.2.0 — 2026-11-20
+
+A sixth skill, `as-built`: it documents what was actually built, from the
+app's code and its instance (#21).
+
+- `/prove-it:as-built [alias]` writes the light document: exactly two
+  diagrams, the pieces and one record's path, each followed by a sources
+  table; up to five differences from the design; and what was not verified.
+- `/prove-it:as-built full [alias]` writes the turnover document, in nine
+  fixed sections: summary, context, the pieces, the agent (workflow and
+  trigger, role and instructions quoted word for word, every tool, the
+  guardrails, what reaches the model), data flows (one record's path, the
+  other paths, who writes and reads each table, a run's life, access across
+  the scope boundary), configuration, as built against as designed, not
+  verified, and where next.
+- Both write `docs/AS-BUILT.md` and build `docs/AS-BUILT.html` from it. The
+  page holds its own diagram library and fetches nothing, so it opens offline
+  and can be sent on its own.
+- It reads the instance through `now-sdk query --auth <alias>` only, and
+  changes nothing there. Each piece is Found, Not found or Not checked. A
+  failed query is Not checked. With `none` for the alias it documents from
+  the code alone.
+- Every box, step and state has a row that names a file under `src/` or a
+  table and record on the instance. What it couldn't confirm is listed under
+  Not verified and never drawn as fact.
+- `skills/as-built/build-page.mjs`, with no dependencies: it checks the
+  document's fixed shape; refuses, with the line, raw HTML, images, rules,
+  any link that isn't a plain relative path, a diagram that holds a
+  directive, a URL or HTML, and any instance hostname, however it is
+  dressed up; writes the page, whose Content-Security-Policy allows its own
+  two scripts by hash and no fetch at all;
+  and, where the computer has Chrome, Edge or Chromium, opens the page
+  headless to check that every diagram draws. `--check` passes only when the
+  page was built from the document as it stands.
+- `skills/as-built/vendor/`: mermaid 12.3.0 (MIT), written into each page.
+- `templates/AS-BUILT.md`: the fixed sections and what goes in each.
+- `grade`: notes the as-built document in Checks run as
+  `as-built (not scored)`. It is not a criterion: no score, cap or
+  remediation story changes.
+- `handoff verdict`: lists the as-built document under What the receiving
+  team receives, by name only. The verdict doesn't depend on it, and
+  `diagnose` still reads only `RUNBOOK.md`.
+- Plugin and marketplace versions are 0.2.0.
+
+**To update an installed kit:** in Claude Code, run
+`/plugin marketplace update prove-it`, then `/plugin update prove-it@prove-it`,
+and restart Claude Code. If you installed from a pinned tag, add the
+marketplace again at the new tag: `/plugin marketplace add <owner>/prove-it-kit#v0.2.0`.
+The pre-commit guard is unchanged: there is no need to copy it again.
+
 ## 0.1.4 — 2026-10-14
 
 The person's confirmation of the read-back signs the design record. There is

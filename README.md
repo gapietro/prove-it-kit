@@ -3,12 +3,15 @@
 ## What it is
 
 A Claude Code plugin for building ServiceNow apps with AI, where every stage
-has to prove itself before the next one starts. It has five stages. **Consult**
+has to prove itself before the next one starts. It has six stages. **Consult**
 reviews a brief and decides, for each capability, whether it is plain code, a
 Now Assist skill or an agent. **Design challenge** questions your design one
 point at a time and writes it up as a design record, signed by the person's confirmation.
 **Build plan** turns a signed record into milestones, epics and stories on
-GitHub. **Grade** scores the build at each milestone, with the arithmetic
+GitHub. **As built** draws what was actually built, from the code and the
+instance: two diagrams, or a full turnover document with the agent broken down
+and every data flow, where every box names where it comes from. **Grade**
+scores the build at each milestone, with the arithmetic
 shown, and caps the score when something blocks release. **Handoff** proves
 that someone who didn't build the app can run it: it checks every record has a
 reason, writes a runbook, and runs a drill: a person plants a realistic
@@ -29,13 +32,14 @@ Needs Node ≥ 22, `git` and the GitHub CLI (`gh`). Then work through
 guard is installed separately from a local clone of this repo (`git clone`
 it anywhere; see The guard).
 
-## The five commands
+## The six commands
 
 | Command | Reads | Writes | The one thing it won't do |
 |---|---|---|---|
 | `/prove-it:consult [brief]` | The brief (default: the single file in `brief/`) | `CONSULT.md` in the workspace root | Write anything before you confirm its restatement of the brief |
 | `/prove-it:design-challenge [consult]`<br>`/prove-it:design-challenge amend [record]` | `./CONSULT.md`, else `../CONSULT.md`; the kit's `DESIGN.md` template. `amend` reads the existing record | `docs/DESIGN-<Feature>.md`, after asking one question per turn and reading every term back for you to confirm; it writes exactly the confirmed terms. `amend` adds or changes terms (read back the same way), with one unsigned drift-log row for each | Sign the record, or fill in any Signed by cell |
 | `/prove-it:build-plan [record]` | A signed `docs/DESIGN-*.md` (here, else `../docs/`); the live GitHub board | `plan.json` in the workspace; labels, milestones, epics and stories on GitHub (through `file-plan.mjs`); a story that implements a term asks for tests that name its id (`C<n>`); `BACKLOG.md`, appending `!/BACKLOG.md` to `.gitignore` | File from an unsigned record (or without your approval) |
+| `/prove-it:as-built [alias]`<br>`/prove-it:as-built full [alias]` | `src/`, `now.config.json`, the instance through `now-sdk query --auth <alias>` only (it asks for the alias if none is given; `none` documents from the code alone), the design records for the comparison, and the kit's `AS-BUILT.md` template; nothing else, and never an earlier `AS-BUILT.md` | `docs/AS-BUILT.md` and the page `docs/AS-BUILT.html`, built by `build-page.mjs`. Light: two diagrams (the pieces, one record's path), each with a sources table, up to five differences from the design, and what was not verified. `full`: nine fixed sections, with the agent (workflow and trigger, instructions quoted, every tool, guardrails, what reaches the model), every data flow, who writes each table, a run's states, cross-scope access and the configuration | Draw a box it didn't find, or change anything on the instance |
 | `/prove-it:grade [milestone]` | The repo, its design records, the board; runs the build, tests and lint (a pass needs exit 0 and no error reported by the tool) | `GRADE.md` at the repo root, scored on a fixed 18-criterion rubric (six per dimension; a design term counts as tested only when its id appears as a whole word, `C<n>` or `<Feature> C<n>` with several records, in a test's name or in a test file), appending `!/GRADE.md` to `.gitignore`; a remediation plan in `../plan-grade.json`, filed only on approval (which also rewrites `BACKLOG.md`) | Claim a check it didn't run (and it asks you to type the install alias; it never runs `now-sdk auth --list`) |
 | `/prove-it:handoff`<br>`… plant` · `… diagnose [symptom]` · `… verdict` | With no argument: `src/`, the design records, the templates, an existing `RUNBOOK.md` and `HANDOFF.md` draft, and `.gitignore`; nothing else. `plant` reads `RUNBOOK.md` and the design records; `diagnose` reads **only** `RUNBOOK.md`; `verdict` reads every card and notes file | `RUNBOOK.md` and a `HANDOFF.md` draft, appending `!/RUNBOOK.md` and `!/HANDOFF.md` to `.gitignore`; `plant` writes a drill card (`../drill-card.md`, then numbered ones) and `diagnose` writes numbered drill notes, both in the workspace; `verdict` writes the final `HANDOFF.md` | Soften the verdict |
 
@@ -54,6 +58,8 @@ Each command ends by naming the next one.
 - `templates/RUNBOOK.md`: the runbook, ending in a symptom → cause index.
 - `templates/HANDOFF.md`: the handoff record: three checks, a verdict, and
   open items with owners named by role.
+- `templates/AS-BUILT.md`: the as-built document's fixed sections, light and
+  full, and what goes in each.
 
 ## The guard
 
@@ -95,10 +101,12 @@ It is a seatbelt, not a vault: see Honest limits.
 | How blockers are counted | Open `gate:<next gate>` issues, excluding `register`; the next gate is the earliest gate, in the order merge → install → demo → handoff → publish, with open issues. `BACKLOG.md` shows it at the top |
 | `/prove-it:grade` input; installs itself?; forecast? | Optional milestone (title or gate); with none it lists them and asks. Scores the same fixed 18-criterion rubric on every project (six per dimension; per-term checks are `n of m` coverage inside a criterion). A term counts as tested only when its id appears as a whole word (`C<n>`, or `<Feature> C<n>` with several records) in a test's name or in a test file, so name tests after the term they prove (`C3: …`); `templates/CLAUDE.md` says so. A build, test or lint pass needs exit 0 and no error reported by the tool itself (an `ERROR:` line from now-sdk, `npm ERR!` or `npm error`, a failed-test count above zero); exit 0 with such an error is unverified, a non-zero exit is a fail (exit 127, tool missing, is unverified), and no visible status is unverified. A rubric row passes only with evidence of the kind it names. Never runs `now-sdk auth --list`; before installing it asks "Which alias should I install to? Type the alias name.", and a yes counts only if it names the alias; always `--auth <alias>`. Always writes a forecast. Remediation is one epic in `../plan-grade.json`, one story per failed or unverified criterion (at most 18), filed with `--reopen` so a regressed criterion reopens its old issue |
 | `/prove-it:handoff` check 3 | Split into `plant` (writes `../drill-card.md`, then `../drill-card-<n>.md`; never touches the instance) and `diagnose` (fresh session, `RUNBOOK.md` only, writes `../drill-notes-<n>.md` per attempt), then `verdict` (reads every card and notes file) |
+| `/prove-it:as-built` modes, output, how to check it | No argument: the light document (exactly two diagrams). `full`: the turnover document (nine sections). Any other word is the now-sdk alias. Both write `docs/AS-BUILT.md` and build `docs/AS-BUILT.html`, one page that holds its own diagram library and fetches nothing. `node skills/as-built/build-page.mjs docs/AS-BUILT.md --check` passes only when the document has its fixed shape and the page was built from that exact document. Diagrams are `flowchart`, `sequenceDiagram` and `stateDiagram-v2` only; each is followed by a sources table with a "Where it comes from" column. On the instance a piece is Found, Not found or Not checked |
 | `docs/SETUP-CHECKLIST.md` | Ships in the kit |
 | `/prove-it:build-plan` approval | Preview table, then "approve"; then it asks "Dry run first (recommended), or apply now?" A dry run reads the live repo and files nothing |
 | How skills find kit files | `${CLAUDE_PLUGIN_ROOT}` (for example `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md`) |
 | The filer | `node skills/build-plan/file-plan.mjs <plan.json> --check \| --dry-run [--reopen] \| --apply [--reopen] [--backlog <path>]` |
+| The page builder | `node skills/as-built/build-page.mjs <AS-BUILT.md> [--mode light\|full] [--check] [--no-draw-check]` |
 
 ## Honest limits
 
@@ -138,11 +146,29 @@ It is a seatbelt, not a vault: see Honest limits.
   check traces each record through terms and sections only.
 - The runbook's `Symptom → cause index` heading has an awkward anchor
   (`#symptom--cause-index`); link to it by heading text, not anchor.
+- **As built reads the wiring, not a run.** It shows how the app is put
+  together, from `src/` and the instance's configuration. It never watches a
+  record go through, so behaviour is listed as not verified.
+- **The as-built builder reads a small Markdown, and refuses what it knows
+  to be unsafe, not everything else.** A table written without its leading
+  `|`, or a list with blank lines between its items, is rendered plainly
+  instead of being refused. Nothing it renders can run or fetch: text is
+  escaped, a link must be a plain relative path, and the page's security
+  policy allows only its own two scripts.
+- **The as-built checker checks shape, not truth.** `build-page.mjs` proves
+  the document has its sections, that every diagram has a sources table and
+  that the page matches the document. Whether a box is really there is for a
+  person to check, from the sources table.
+- **The as-built page is about 5 MB**, because the diagram library (mermaid,
+  vendored in `skills/as-built/vendor/`) is written into it so that it opens
+  offline. The drawing check needs Chrome, Edge or Chromium on the computer;
+  without one the page is still built, and the builder says the drawing was
+  not checked.
 - These are tracked in issue #3.
 
 ## Versions
 
-0.1.4 (public; tag `v0.1.4`). See [CHANGELOG.md](CHANGELOG.md). Record the versions you
+0.2.0 (public; tag `v0.2.0`). See [CHANGELOG.md](CHANGELOG.md). Record the versions you
 build or record with (Claude Code, model, Node, now-sdk, gh, gitleaks,
 prove-it) in the table in
 [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md#record-your-versions).
