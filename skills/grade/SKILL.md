@@ -62,6 +62,15 @@ Arguments given: `$ARGUMENTS` (may be empty).
    background) is unverified. Record the command, the exit status and the
    last lines of output (errors in full) as evidence. A missing check is
    never a pass.
+
+   **As-built document, noted and never scored.** If `docs/AS-BUILT.md`
+   exists, run
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/as-built/build-page.mjs docs/AS-BUILT.md --check`
+   and record it in Checks run as `as-built (not scored)`, with its exit
+   status and output. If the file doesn't exist, record
+   `as-built (not scored)` as "none: `/prove-it:as-built` writes one". It is
+   not one of the 18 criteria: it changes no score and no cap, and gets no
+   remediation story, whatever its result.
 3. **Ask before installing.** Never run `now-sdk auth --list` (it prints
    instance hosts). Ask: "Which alias should I install to? Type the alias
    name." and wait. A yes counts only if it names the alias. If asked to skip,
@@ -192,7 +201,7 @@ Arguments given: `$ARGUMENTS` (may be empty).
 (`git rev-parse --short HEAD`). Sections, in this order:
 
 1. **Checks run** — table: check · exact command · exit status · evidence
-   (the last lines of output). Recorded output never contains an instance
+   (the last lines of output). Its last row is `as-built (not scored)`. Recorded output never contains an instance
    host or URL. Write `<instance>` and name the alias.
 2. **Rubric** — table: dimension · criterion id · result (pass / fail /
    unverified) · evidence. Exactly 18 rows, six per dimension, in the order
@@ -221,7 +230,8 @@ in the workspace, next to the repo, never committed.
 - A rubric row passes only with evidence of the kind it names. Without it,
   unverified.
 - Score exactly the 18 criteria of step 4, six per dimension. Per-term checks
-  are coverage inside a criterion, never criteria of their own.
+  are coverage inside a criterion, never criteria of their own. The as-built
+  note is never scored.
 - Never run `now-sdk auth --list`. Ask for the alias by name before
   `now-sdk install`. Always use `--auth <alias>`, never `--alias`.
 - Never claim a check that wasn't run. Not run means unverified, and

@@ -1,13 +1,13 @@
 {
   "name": "prove-it",
   "owner": { "name": "gapietro" },
-  "metadata": { "description": "The prove-it kit", "version": "0.1.4" },
+  "metadata": { "description": "The prove-it kit", "version": "0.2.0" },
   "plugins": [
     {
       "name": "prove-it",
       "source": "./",
       "description": "Build ServiceNow apps with AI, behind inspections.",
-      "version": "0.1.4",
+      "version": "0.2.0",
       "license": "MIT"
     }
   ]

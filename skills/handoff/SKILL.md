@@ -168,6 +168,10 @@ own inputs in their steps.
    coverage is m of m, check 2 passes and check 3 passes. Anything else is
    **NOT READY**. Date it and name every blocking item. Fill Open items (item ·
    blocks · owner by role, never by name) and What the receiving team receives.
+   For that list, check by name only (`ls docs/AS-BUILT.md docs/AS-BUILT.html`;
+   don't read them): if they exist, list them as the as-built document. If
+   not, write "No as-built document: `/prove-it:as-built full` writes one."
+   It doesn't change the verdict.
 
 ## Output
 

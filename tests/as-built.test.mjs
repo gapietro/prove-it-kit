@@ -1,0 +1,281 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  checkDocument, renderPage, sourceHash, findBrowser, drawCheck, LIGHT_SECTIONS, FULL_SECTIONS, FULL_SUBSECTIONS,
+} from '../skills/as-built/build-page.mjs';
+
+const here = (p) => fileURLToPath(new URL(p, import.meta.url));
+const SCRIPT = here('../skills/as-built/build-page.mjs');
+const fixture = (name) => readFileSync(here(`./fixtures/${name}`), 'utf8');
+const light = () => fixture('as-built.light.md');
+const full = () => fixture('as-built.full.md');
+const has = (errors, text) => assert.ok(errors.some((e) => e.includes(text)), `expected an error containing "${text}", got ${JSON.stringify(errors)}`);
+const lineOf = (md, text) => md.split('\n').findIndex((l) => l.includes(text)) + 1;
+const run = (args) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8' });
+const scratch = (name, md) => {
+  const dir = mkdtempSync(join(tmpdir(), 'as-built-'));
+  const file = join(dir, 'AS-BUILT.md');
+  writeFileSync(file, md ?? fixture(name));
+  return { dir, file, page: join(dir, 'AS-BUILT.html') };
+};
+
+// The shape of a document
+
+test('the light fixture is a valid light document with two diagrams', () => {
+  const r = checkDocument(light());
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.mode, 'light');
+  assert.equal(r.diagrams.length, 2);
+});
+test('the full fixture is a valid full document', () => {
+  const r = checkDocument(full());
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.mode, 'full');
+  assert.ok(r.diagrams.length >= 4);
+});
+test('a document with no Mode line is refused', () => {
+  has(checkDocument(light().replace('- Mode: light\n', '')).errors, 'no "Mode:" line');
+});
+test('an unknown mode is refused', () => {
+  has(checkDocument(light().replace('Mode: light', 'Mode: short')).errors, 'Mode must be light or full');
+});
+test('a document with no "Read at" line is refused', () => {
+  has(checkDocument(light().replace(/- Read at:.*\n/, '')).errors, 'no "Read at:" line');
+});
+test('a title that does not start "As built:" is refused', () => {
+  has(checkDocument(light().replace('# As built: ', '# Architecture of ')).errors, 'first line must be "# As built: <app name>"');
+});
+test('a light document with a third diagram is refused', () => {
+  const md = light().replace('## Not verified', '```mermaid\nflowchart LR\n  a --> b\n```\n\n| Piece | Where it comes from |\n|---|---|\n| a | `src/a.now.ts` |\n\n## Not verified');
+  has(checkDocument(md).errors, 'a light document has exactly 2 diagrams, found 3');
+});
+test('a light document missing a section is refused, by name', () => {
+  const md = light().replace(/## As built against as designed[\s\S]*?(?=## Not verified)/, '');
+  has(checkDocument(md).errors, 'missing section "As built against as designed"');
+});
+test('sections out of order are refused', () => {
+  const md = light();
+  const a = md.indexOf('## As built against as designed');
+  const b = md.indexOf('## Not verified');
+  const swapped = md.slice(0, a) + md.slice(b) + '\n' + md.slice(a, b);
+  has(checkDocument(swapped).errors, 'out of order');
+});
+test('a section the mode does not have is refused', () => {
+  has(checkDocument(light().replace('## Not verified', '## Deployment\n\nSome text.\n\n## Not verified')).errors, 'unexpected section "Deployment"');
+});
+test('an empty section is refused', () => {
+  const md = light().replace(/## Not verified[\s\S]*$/, '## Not verified\n');
+  has(checkDocument(md).errors, 'section "Not verified" is empty');
+});
+test('a full document missing a subsection is refused, by name', () => {
+  const md = full().replace(/### Guardrails[\s\S]*?(?=### What reaches the model)/, '');
+  has(checkDocument(md).errors, 'missing subsection "Guardrails" under "The agent"');
+});
+test('a full document needs a diagram in Context, The pieces and One record\'s path', () => {
+  const md = full().replace(/(## Context\n\n)```mermaid[\s\S]*?```\n/, '$1');
+  has(checkDocument(md).errors, '"Context" has no diagram');
+});
+test('the light document\'s two diagrams are a flowchart, then a sequence diagram', () => {
+  has(checkDocument(light().replace('sequenceDiagram', 'flowchart TD')).errors, '"One record\'s path" must be a sequenceDiagram');
+});
+
+// Every diagram can be checked
+
+test('a diagram with no sources table is refused, with its line', () => {
+  const md = light().replace(/\| Step \| What happens[\s\S]*?(?=## As built against)/, '');
+  const r = checkDocument(md);
+  has(r.errors, `line ${lineOf(md, 'sequenceDiagram') - 1}: diagram has no sources table`);
+});
+test('a sources table needs a "Where it comes from" column', () => {
+  has(checkDocument(light().replace('| Piece | Kind | Where it comes from |', '| Piece | Kind | Source |')).errors, 'diagram has no sources table');
+});
+test('an empty "Where it comes from" cell is refused, with its line', () => {
+  const md = light().replace('| Table | `src/tables/cluster.now.ts` |', '| Table |  |');
+  has(checkDocument(md).errors, `line ${lineOf(md, '| x_kgf_cluster | Table |')}: "Where it comes from" is empty`);
+});
+test('a diagram type outside the three allowed is refused', () => {
+  has(checkDocument(light().replace('flowchart LR', 'C4Context')).errors, 'diagram type "C4Context" is not allowed');
+});
+test('an unclosed code fence is refused', () => {
+  has(checkDocument(light().replace('```\n\n| Piece |', '\n| Piece |')).errors, 'code block is never closed');
+});
+
+// What must never be in the document
+
+test('an instance hostname is refused, with its line', () => {
+  const md = light().replace('alias `dev-test`', 'dev12345.service-now.com');
+  has(checkDocument(md).errors, `line ${lineOf(md, 'service-now.com')}: names an instance host`);
+});
+test('an absolute link or bare URL is refused', () => {
+  has(checkDocument(light().replace('no run was read', 'see [the docs](https://example.com/x)')).errors, 'absolute link');
+  has(checkDocument(light().replace('no run was read', 'see http://example.com/x')).errors, 'absolute link');
+});
+test('raw HTML is refused, with its line', () => {
+  const md = light().replace('## Not verified', '<div>hello</div>\n\n## Not verified');
+  has(checkDocument(md).errors, `line ${lineOf(md, '<div>')}: raw HTML`);
+});
+test('an image is refused', () => {
+  has(checkDocument(light().replace('no run was read', '![shot](shot.png)')).errors, 'image');
+});
+test('a table row with the wrong number of cells is refused', () => {
+  const md = light().replace('| C4 | A rate limit of 10 drafts an hour |', '| C4 |');
+  has(checkDocument(md).errors, 'cells, the header has');
+});
+
+// The page
+
+const page = (md) => renderPage(md, 'globalThis.mermaid = {};');
+
+test('the page holds the library, the source hash and no outside address', () => {
+  const html = page(light());
+  assert.ok(html.startsWith('<!doctype html>'));
+  assert.ok(html.includes('globalThis.mermaid = {};'));
+  assert.ok(html.includes(`<meta name="as-built-source" content="${sourceHash(light())}">`));
+  assert.ok(html.includes('<title>As built: Knowledge Gap Finder</title>'));
+  assert.equal(/(src|href)="(https?:)?\/\//.test(html), false, 'the page must fetch nothing');
+});
+test('the library can\'t close its own script tag', () => {
+  const html = renderPage(light(), 'var a = "</script><script>alert(1)</script>"; var b = "<!--";');
+  assert.equal(html.includes('"</script><script>alert(1)'), false);
+  assert.ok(html.includes('<\\/script>'));
+  assert.equal(html.includes('"<!--"'), false);
+});
+test('each diagram keeps its source as text, escaped', () => {
+  const html = page(light());
+  assert.equal((html.match(/<figure class="diagram"/g) ?? []).length, 2);
+  assert.ok(html.includes('J-&gt;&gt;Q: insert a request for the top cluster'));
+  assert.ok(html.includes('Diagram as text'));
+});
+test('text is escaped, and inline code, bold and relative links are kept', () => {
+  const md = full().replace('Nothing is published\nwithout a person.', 'Nothing is **published** without a `<person>` & a reason.');
+  const html = page(md);
+  assert.ok(html.includes('<strong>published</strong> without a <code>&lt;person&gt;</code> &amp; a reason.'));
+  assert.ok(html.includes('<a href="../RUNBOOK.md">RUNBOOK.md</a>'));
+});
+test('tables, lists and code blocks become their elements', () => {
+  const html = page(full());
+  assert.ok(html.includes('<th>Where it comes from</th>'));
+  assert.ok(html.includes('<td><code>src/tables/cluster.now.ts</code></td>'));
+  assert.ok(html.includes('<li>Nothing from <code>kb_knowledge</code>.</li>'));
+  assert.ok(html.includes('<pre><code>You draft one knowledge article'));
+});
+test('a full page has a table of contents; a light page has none', () => {
+  assert.ok(page(full()).includes('<nav'));
+  assert.equal(page(light()).includes('<nav'), false);
+});
+test('the source hash ignores line endings', () => {
+  assert.equal(sourceHash(light()), sourceHash(light().replace(/\n/g, '\r\n')));
+});
+test('rendering an invalid document throws', () => {
+  assert.throws(() => page(light().replace('- Mode: light\n', '')), /Mode/);
+});
+
+// The template agrees with the checker
+
+test('templates/AS-BUILT.md names every section and subsection of a full document', () => {
+  const tpl = readFileSync(here('../templates/AS-BUILT.md'), 'utf8');
+  for (const s of FULL_SECTIONS) assert.ok(tpl.includes(`\n## ${s}\n`), `template lacks "## ${s}"`);
+  for (const [, subs] of Object.entries(FULL_SUBSECTIONS)) for (const s of subs) assert.ok(tpl.includes(`\n### ${s}\n`), `template lacks "### ${s}"`);
+  const everyFull = [...FULL_SECTIONS, ...Object.values(FULL_SUBSECTIONS).flat()];
+  for (const s of LIGHT_SECTIONS) assert.ok(everyFull.includes(s), `light section "${s}" must exist in full`);
+});
+test('the skill names the builder, the template and both modes', () => {
+  const skill = readFileSync(here('../skills/as-built/SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+  for (const s of ['${CLAUDE_PLUGIN_ROOT}/skills/as-built/build-page.mjs', '${CLAUDE_PLUGIN_ROOT}/templates/AS-BUILT.md', 'docs/AS-BUILT.md', 'docs/AS-BUILT.html', '`full`']) {
+    assert.ok(skill.includes(s), `SKILL.md lacks ${s}`);
+  }
+  for (const s of [...FULL_SECTIONS, ...Object.values(FULL_SUBSECTIONS).flat()]) assert.ok(skill.includes(s), `SKILL.md never names "${s}"`);
+});
+test('the vendored library is the version its notice names', () => {
+  const notice = readFileSync(here('../skills/as-built/vendor/README.md'), 'utf8');
+  const version = notice.match(/mermaid (\d+\.\d+\.\d+)/)?.[1];
+  assert.ok(version, 'vendor/README.md must name the version');
+  const lib = readFileSync(here('../skills/as-built/vendor/mermaid.min.js'), 'utf8');
+  assert.ok(lib.includes(`"${version}"`), `mermaid.min.js does not contain version ${version}`);
+  assert.ok(existsSync(here('../skills/as-built/vendor/LICENSE-mermaid')));
+});
+
+// The command
+
+test('the command builds the page beside the document, and --check then passes', () => {
+  const s = scratch('as-built.light.md');
+  const built = run([s.file, '--no-draw-check']);
+  assert.equal(built.status, 0, built.stderr);
+  assert.match(built.stdout, /light, 2 diagrams/);
+  assert.ok(readFileSync(s.page, 'utf8').includes(sourceHash(light())));
+  const checked = run([s.file, '--check']);
+  assert.equal(checked.status, 0, checked.stderr);
+  assert.match(checked.stdout, /page is current/);
+});
+test('--check fails when the page is missing, and writes nothing', () => {
+  const s = scratch('as-built.light.md');
+  const r = run([s.file, '--check']);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /no page/);
+  assert.equal(existsSync(s.page), false);
+});
+test('--check fails when the document changed after the page was built', () => {
+  const s = scratch('as-built.light.md');
+  assert.equal(run([s.file, '--no-draw-check']).status, 0);
+  writeFileSync(s.file, light().replace('only the wiring', 'only the wiring was read'));
+  const r = run([s.file, '--check']);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /page is out of date/);
+});
+test('an invalid document builds no page and lists every error', () => {
+  const s = scratch(null, light().replace('- Mode: light\n', '').replace('alias `dev-test`', 'dev12345.service-now.com'));
+  const r = run([s.file, '--no-draw-check']);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /no "Mode:" line/);
+  assert.match(r.stderr, /names an instance host/);
+  assert.equal(existsSync(s.page), false);
+});
+test('a missing file, or no argument, is a usage error', () => {
+  assert.equal(run([]).status, 2);
+  assert.equal(run([join(tmpdir(), 'no-such-AS-BUILT.md')]).status, 2);
+});
+test('--mode refuses a document of the other mode', () => {
+  const s = scratch('as-built.light.md');
+  const r = run([s.file, '--mode', 'full', '--no-draw-check']);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /expected a full document, this one is light/);
+});
+
+// The diagrams really draw (needs Chrome, Edge or Chromium; skipped without one)
+
+const browser = findBrowser();
+const drawOpts = { skip: browser ? false : 'no Chrome, Edge or Chromium found' };
+
+test('every diagram in both fixtures draws', drawOpts, () => {
+  for (const name of ['as-built.light.md', 'as-built.full.md']) {
+    const s = scratch(name);
+    const r = run([s.file]);
+    assert.equal(r.status, 0, `${name}: ${r.stdout}${r.stderr}`);
+    assert.match(r.stdout, /every diagram drew/);
+  }
+});
+test('a diagram that can\'t be drawn fails the build, naming its line', drawOpts, () => {
+  const md = light().replace('J->>Q: insert a request for the top cluster', 'J->>: ->> ((( broken');
+  const s = scratch(null, md);
+  const r = run([s.file]);
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stderr, new RegExp(`line ${lineOf(md, 'sequenceDiagram') - 1}: diagram did not draw`));
+});
+test('drawCheck reports "not checked" when there is no browser, or one that can\'t be run', async () => {
+  const s = scratch('as-built.light.md');
+  assert.equal(run([s.file, '--no-draw-check']).status, 0);
+  assert.deepEqual(await drawCheck(s.page, null), { checked: false, failed: [] });
+  assert.deepEqual(await drawCheck(s.page, join(s.dir, 'no-such-browser'), { waitMs: 3000 }), { checked: false, failed: [] });
+});
+test('with no browser the build still succeeds, and says the drawing was not checked', () => {
+  const s = scratch('as-built.light.md');
+  const r = spawnSync(process.execPath, [SCRIPT, s.file], { encoding: 'utf8', env: { ...process.env, PROVE_IT_BROWSER: 'none' } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /drawing not checked/);
+  assert.ok(existsSync(s.page));
+});

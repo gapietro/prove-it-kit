@@ -33,7 +33,8 @@
 # Process files — admit each when first created by APPENDING its line at the end of this file (never git add -f):
 # the starter session protocol
 # !/CLAUDE.md
-# design records (docs/DESIGN-<Feature>.md), from the first design-challenge
+# design records (docs/DESIGN-<Feature>.md), from the first design-challenge;
+# also holds the as-built document (docs/AS-BUILT.md and its page, AS-BUILT.html)
 # !/docs/
 # the backlog, from the first build-plan
 # !/BACKLOG.md

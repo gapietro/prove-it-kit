@@ -28,4 +28,4 @@ What was planted, the exact symptom text given to the diagnose session, the firs
 
 ## What the receiving team receives
 
-The repo, documents and access the receiving team gets, one line each.
+The repo, documents and access the receiving team gets, one line each. The as-built document (`docs/AS-BUILT.md` and its page) is one of them, when it exists.
