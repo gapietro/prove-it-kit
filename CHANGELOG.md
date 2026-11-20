@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `as-built` page: bold and italic now work around inline code. A phrase such
+  as `**Not checked: the user \`hr.router\`**` kept its asterisks on the
+  page (#23). The Markdown was always right: build the page again to fix a
+  page already made.
+
 ## 0.2.0 — 2026-11-20
 
 A sixth skill, `as-built`: it documents what was actually built, from the

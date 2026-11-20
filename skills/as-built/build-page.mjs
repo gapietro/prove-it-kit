@@ -271,14 +271,16 @@ export function checkDocument(md, { expectMode } = {}) {
 export const sourceHash = (md) => createHash('sha256').update(normalize(md)).digest('hex').slice(0, 16);
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// Inline code is lifted out first and put back last, so that bold, italic and
+// links are found across it, and so that nothing inside code is ever formatted.
 function inline(text) {
-  return text.split(/(`[^`]+`)/).map((part) => {
-    if (/^`[^`]+`$/.test(part)) return `<code>${esc(part.slice(1, -1))}</code>`;
-    return esc(part)
-      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (all, label, href) => (SAFE_HREF.test(href) ? `<a href="${href}">${label}</a>` : all))
-      .replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<strong>$1</strong>')
-      .replace(/(^|[\s(])\*(\S(?:[^*]*?\S)?)\*(?=[\s).,;:!?]|$)/g, '$1<em>$2</em>');
-  }).join('');
+  const code = [];
+  const lifted = text.replace(/\u0000/g, '').replace(/`([^`]+)`/g, (_, c) => `\u0000${code.push(`<code>${esc(c)}</code>`) - 1}\u0000`);
+  return esc(lifted)
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (all, label, href) => (SAFE_HREF.test(href) ? `<a href="${href}">${label}</a>` : all))
+    .replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(])\*(\S(?:[^*]*?\S)?)\*(?=[\s).,;:!?]|$)/g, '$1<em>$2</em>')
+    .replace(/\u0000(\d+)\u0000/g, (_, k) => code[Number(k)]);
 }
 
 const slugger = () => {

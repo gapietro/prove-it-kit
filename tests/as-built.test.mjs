@@ -248,6 +248,12 @@ test('text is escaped, and inline code, bold and relative links are kept', () =>
   assert.ok(html.includes('<strong>published</strong> without a <code>&lt;person&gt;</code> &amp; a reason.'));
   assert.ok(html.includes('<a href="../RUNBOOK.md">RUNBOOK.md</a>'));
 });
+test('bold and italic work around inline code, and the code stays escaped', () => {
+  const md = light().replace('- Whether a real run reaches `write_draft`: no run was read, only the wiring.',
+    '- **Not checked: the user `hr.router`**, and *the `<b>` table*, and `**not bold**` in code.');
+  const html = page(md);
+  assert.ok(html.includes('<strong>Not checked: the user <code>hr.router</code></strong>, and <em>the <code>&lt;b&gt;</code> table</em>, and <code>**not bold**</code> in code.'), html.match(/<li>[^\n]*Not checked[^\n]*/)?.[0]);
+});
 test('tables, lists and code blocks become their elements', () => {
   const html = page(full());
   assert.ok(html.includes('<th>Where it comes from</th>'));
