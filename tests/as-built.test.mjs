@@ -362,11 +362,24 @@ test('--mode refuses a document of the other mode', () => {
 
 const browser = findBrowser();
 const drawOpts = { skip: browser ? false : 'no Chrome, Edge or Chromium found' };
+// A browser on a busy machine can take longer than the builder waits to give
+// its first page. That is "not checked", which the builder reports and never
+// fails on; these tests need the check itself, so they ask once more (#25).
+// A diagram that can't be drawn is "checked, and failed": it is never retried.
+const NOT_CHECKED = /drawing not checked/;
+const runDrawn = (args) => {
+  const first = run(args);
+  return NOT_CHECKED.test(first.stdout) ? run(args) : first;
+};
+const drawCheckTwice = async (pagePath) => {
+  const first = await drawCheck(pagePath);
+  return first.checked ? first : drawCheck(pagePath);
+};
 
 test('every diagram in both fixtures draws', drawOpts, () => {
   for (const name of ['as-built.light.md', 'as-built.full.md']) {
     const s = scratch(name);
-    const r = run([s.file]);
+    const r = runDrawn([s.file]);
     assert.equal(r.status, 0, `${name}: ${r.stdout}${r.stderr}`);
     assert.match(r.stdout, /every diagram drew/);
   }
@@ -383,15 +396,15 @@ test('the built page draws under its own security policy, and asks the network f
     const lib = readFileSync(here('../skills/as-built/vendor/mermaid.min.js'), 'utf8');
     const html = renderPage(light(), lib).replace('flowchart LR', `%%{init: {"themeCSS": ".node rect{fill:url(http://127.0.0.1:${port}/css)}"}}%%\nflowchart LR`);
     writeFileSync(s.page, html);
-    const r = await drawCheck(s.page);
-    assert.equal(r.checked, true);
+    const r = await drawCheckTwice(s.page);
+    assert.equal(r.checked, true, r.reason);
     assert.equal(hits, 0, 'the page fetched from the network');
   } finally { server.close(); }
 });
 test('a diagram that can\'t be drawn fails the build, naming its line', drawOpts, () => {
   const md = light().replace('J->>Q: insert a request for the top cluster', 'J->>: ->> ((( broken');
   const s = scratch(null, md);
-  const r = run([s.file]);
+  const r = runDrawn([s.file]);
   assert.equal(r.status, 1, r.stdout);
   assert.match(r.stderr, new RegExp(`line ${lineOf(md, 'sequenceDiagram') - 1}: diagram did not draw`));
 });
