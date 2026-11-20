@@ -149,6 +149,12 @@ It is a seatbelt, not a vault: see Honest limits.
 - **As built reads the wiring, not a run.** It shows how the app is put
   together, from `src/` and the instance's configuration. It never watches a
   record go through, so behaviour is listed as not verified.
+- **The as-built builder reads a small Markdown, and refuses what it knows
+  to be unsafe, not everything else.** A table written without its leading
+  `|`, or a list with blank lines between its items, is rendered plainly
+  instead of being refused. Nothing it renders can run or fetch: text is
+  escaped, a link must be a plain relative path, and the page's security
+  policy allows only its own two scripts.
 - **The as-built checker checks shape, not truth.** `build-page.mjs` proves
   the document has its sections, that every diagram has a sources table and
   that the page matches the document. Whether a box is really there is for a

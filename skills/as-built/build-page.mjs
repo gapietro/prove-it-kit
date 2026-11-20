@@ -20,8 +20,17 @@ export const FULL_SUBSECTIONS = {
 };
 const DIAGRAM_TYPES = { flowchart: 'flowchart', graph: 'flowchart', sequenceDiagram: 'sequenceDiagram', 'stateDiagram-v2': 'stateDiagram-v2' };
 const SOURCE_COLUMN = 'where it comes from';
-const HOST_RE = /[a-z0-9-]+\.service-now\.com/i;
-const URL_RE = /\b[a-z][a-z0-9+.-]*:\/\/|\]\(\s*(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+// A host in any disguise: bold or code marks and zero-width characters are
+// taken out before the test, and the government-cloud domain counts too.
+const HOST_RE = /service-?now(services)?\W*\.\W*com/i;
+const unmask = (line) => line.replace(/[*`_\u00ad\u200b-\u200f\u2060\ufeff]/g, '');
+const URL_RE = /\b[a-z][a-z0-9+.-]*:\/\//i;
+// The only link a page may hold: a plain relative path. No scheme, no host, no
+// backslash, no leading slash, no control character. An allowlist, because
+// browsers accept too many spellings of a URL for a blocklist to hold.
+const SAFE_HREF = /^(?![/\\])[A-Za-z0-9._~\-/#%]+$/;
+const FENCE_OPEN = /^```\s*([\w.+#-]*)\s*$/;
+const normalize = (md) => md.replace(/^\ufeff/, '').replace(/\r\n?/g, '\n');
 
 // ---------- Markdown, the subset the skill may write ----------
 
@@ -31,34 +40,48 @@ const splitRow = (line) => {
 };
 const LIST_RE = /^(\s*)([-*]|\d+\.)\s+(.*)$/;
 
-// What no line may hold. A host is refused everywhere, a code block included;
-// links, images and raw HTML are only looked for outside code blocks.
-function lineChecks(lines) {
+// What no line may hold. A host is refused everywhere, a code block included.
+// A diagram may hold nothing that could fetch or run: no directive, URL,
+// url() or HTML. Links, images, raw HTML and rules are refused outside code.
+// codeLines and diagramLines come from the parser, so the checker and the
+// parser can never disagree about what is code.
+function lineChecks(lines, codeLines, diagramLines) {
   const errors = [];
-  let fenced = false;
   lines.forEach((line, k) => {
     const n = k + 1;
-    if (HOST_RE.test(line)) errors.push(`line ${n}: names an instance host (write the alias, never the host)`);
-    if (/^```/.test(line)) { fenced = !fenced; return; }
-    if (fenced) return;
-    if (URL_RE.test(line)) errors.push(`line ${n}: absolute link or URL (only relative links are allowed)`);
-    if (/!\[/.test(line)) errors.push(`line ${n}: image (not allowed: the page fetches nothing)`);
-    if (/^\s*<[a-zA-Z/!]/.test(line)) errors.push(`line ${n}: raw HTML (not allowed)`);
+    if (HOST_RE.test(unmask(line))) errors.push(`line ${n}: names an instance host (write the alias, never the host)`);
+    if (diagramLines.has(k)) {
+      if (/%%\{|:\/\/|url\s*\(|</i.test(line)) errors.push(`line ${n}: a diagram can't hold a directive (%%{), a URL, url() or HTML (<)`);
+      return;
+    }
+    if (codeLines.has(k)) return;
+    if (/^\s+```/.test(line)) errors.push(`line ${n}: code block inside a list or indented (not allowed: start it at the margin, after the list)`);
+    if (/^```/.test(line)) errors.push(`line ${n}: unreadable code fence (write \`\`\` and one word, such as \`\`\`text)`);
+    const text = line.replace(/`[^`]*`/g, '');
+    if (URL_RE.test(text)) errors.push(`line ${n}: absolute link or URL (only relative links are allowed)`);
+    for (const m of text.matchAll(/\]\(([^)]*)\)/g)) {
+      if (!SAFE_HREF.test(m[1])) errors.push(`line ${n}: link target ${JSON.stringify(m[1])} is not allowed (only a relative path, such as ../RUNBOOK.md)`);
+    }
+    if (/!\[/.test(text)) errors.push(`line ${n}: image (not allowed: the page fetches nothing)`);
+    if (/<[a-zA-Z/!]/.test(text)) errors.push(`line ${n}: raw HTML (not allowed: put a name such as <alias> in backticks)`);
+    if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) errors.push(`line ${n}: horizontal rule (not allowed)`);
   });
   return errors;
 }
 
 export function parseMarkdown(md) {
-  const lines = md.replace(/\r\n?/g, '\n').split('\n');
+  const lines = normalize(md).split('\n');
   const blocks = [];
   const errors = [];
+  const codeLines = new Set();
+  const diagramLines = new Set();
   let i = 0;
   const startsBlock = (l) => /^(#{1,6}\s|```|\||>)/.test(l) || LIST_RE.test(l);
   while (i < lines.length) {
     const line = lines[i];
     const n = i + 1;
     if (!line.trim()) { i++; continue; }
-    const fence = line.match(/^```\s*([\w-]*)\s*$/);
+    const fence = line.match(FENCE_OPEN);
     if (fence) {
       let j = i + 1;
       // A new ```lang line before the closing fence means the close was left out.
@@ -66,10 +89,15 @@ export function parseMarkdown(md) {
       const closed = j < lines.length && /^```\s*$/.test(lines[j]);
       if (!closed) errors.push(`line ${n}: code block is never closed`);
       blocks.push({ type: 'code', lang: fence[1], text: lines.slice(i + 1, j).join('\n'), line: n });
+      for (let k = i; k < (closed ? j + 1 : j); k++) {
+        codeLines.add(k);
+        if (fence[1] === 'mermaid' && k > i && k < j) diagramLines.add(k);
+      }
       i = closed ? j + 1 : j; continue;
     }
-    if (/^\s*<[a-zA-Z/!]/.test(line)) { i++; continue; } // raw HTML: reported by lineChecks
-    const heading = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
+    // Reported by lineChecks, and left out of the page: raw HTML, a fence that can't be read, a rule.
+    if (/^\s*<[a-zA-Z/!]/.test(line) || /^```/.test(line) || /^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) { i++; continue; }
+    const heading = line.match(/^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/);
     if (heading) {
       if (heading[1].length > 4) errors.push(`line ${n}: heading deeper than four levels`);
       blocks.push({ type: 'heading', level: heading[1].length, text: heading[2], line: n });
@@ -84,7 +112,7 @@ export function parseMarkdown(md) {
       let j = i + 2;
       for (; j < lines.length && lines[j].startsWith('|'); j++) {
         const cells = splitRow(lines[j]);
-        if (cells.length !== header.length) errors.push(`line ${j + 1}: row has ${cells.length} cells, the header has ${header.length}`);
+        if (cells.length !== header.length) errors.push(`line ${j + 1}: row has ${cells.length} cells, the header has ${header.length} (write \\| for a | inside a cell)`);
         rows.push({ cells, line: j + 1 });
       }
       blocks.push({ type: 'table', header, rows, line: n });
@@ -122,7 +150,7 @@ export function parseMarkdown(md) {
     }
     blocks.push({ type: 'para', text: para.join('\n'), line: n });
   }
-  errors.push(...lineChecks(lines));
+  errors.push(...lineChecks(lines, codeLines, diagramLines));
   errors.sort((x, y) => (Number(x.match(/^line (\d+)/)?.[1] ?? 0)) - (Number(y.match(/^line (\d+)/)?.[1] ?? 0)));
   return { blocks, errors };
 }
@@ -163,8 +191,13 @@ export function checkDocument(md, { expectMode } = {}) {
   if (first?.type === 'heading' && first.level === 1 && /^As built: \S/.test(first.text)) result.title = first.text;
   else errors.push('the first line must be "# As built: <app name>"');
 
+  for (const b of blocks.slice(1)) if (b.type === 'heading' && b.level === 1) errors.push(`line ${b.line}: only one "#" heading, the title`);
   const firstH2 = blocks.findIndex((b) => b.type === 'heading' && b.level === 2);
   const head = blocks.slice(1, firstH2 === -1 ? blocks.length : firstH2);
+  for (const b of head) {
+    if (b.type !== 'list' && b.type !== 'para') errors.push(`line ${b.line}: only the Mode, Read at and Instance lines, and a note in plain sentences, go between the title and the first section`);
+    if (b.type === 'para' && /Remove this paragraph/i.test(b.text)) errors.push(`line ${b.line}: the template's instructions are still in the document: remove them`);
+  }
   const facts = head.filter((b) => b.type === 'list').flatMap((b) => b.items.map((it) => it.text));
   const fact = (name) => facts.find((f) => f.startsWith(`${name}:`))?.slice(name.length + 1).trim();
   const mode = fact('Mode');
@@ -181,11 +214,8 @@ export function checkDocument(md, { expectMode } = {}) {
     const type = diagramType(b.text);
     if (!DIAGRAM_TYPES[type]) errors.push(`line ${b.line}: diagram type "${type}" is not allowed (use flowchart, sequenceDiagram or stateDiagram-v2)`);
     result.diagrams.push({ line: b.line, type: DIAGRAM_TYPES[type] ?? type, text: b.text });
-    let sourced = false;
-    for (const next of blocks.slice(k + 1)) {
-      if (next.type === 'heading' || (next.type === 'code' && next.lang === 'mermaid')) break;
-      if (next.type === 'table' && next.header.some((h) => h.toLowerCase() === SOURCE_COLUMN) && next.rows.length) { sourced = true; break; }
-    }
+    const next = blocks[k + 1];
+    const sourced = next?.type === 'table' && next.header.some((h) => h.toLowerCase() === SOURCE_COLUMN) && next.rows.length > 0;
     if (!sourced) errors.push(`line ${b.line}: diagram has no sources table (a table with a "Where it comes from" column, straight after the diagram)`);
   });
   for (const t of blocks.filter((b) => b.type === 'table')) {
@@ -223,6 +253,7 @@ export function checkDocument(md, { expectMode } = {}) {
     if (!s) continue;
     const subs = sectionsOf(s.blocks, 3);
     checkOrder(subs.map((x) => x.name), wanted, 'subsection', errors, parent);
+    for (const sub of subs) if (!wanted.includes(sub.name)) errors.push(`line ${sub.line}: unexpected subsection "${sub.name}" under "${parent}" (it has: ${wanted.join(', ')}; use #### inside one of them)`);
     for (const sub of subs) if (wanted.includes(sub.name) && !hasContent(sub.blocks)) errors.push(`line ${sub.line}: subsection "${sub.name}" is empty (say "None in this app." when there is nothing to show)`);
   }
   needsDiagram('Context', section('Context')?.blocks, 'flowchart');
@@ -237,14 +268,14 @@ export function checkDocument(md, { expectMode } = {}) {
 
 // ---------- The page ----------
 
-export const sourceHash = (md) => createHash('sha256').update(md.replace(/\r\n?/g, '\n')).digest('hex').slice(0, 16);
+export const sourceHash = (md) => createHash('sha256').update(normalize(md)).digest('hex').slice(0, 16);
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 function inline(text) {
   return text.split(/(`[^`]+`)/).map((part) => {
     if (/^`[^`]+`$/.test(part)) return `<code>${esc(part.slice(1, -1))}</code>`;
     return esc(part)
-      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => `<a href="${href}">${label}</a>`)
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (all, label, href) => (SAFE_HREF.test(href) ? `<a href="${href}">${label}</a>` : all))
       .replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<strong>$1</strong>')
       .replace(/(^|[\s(])\*(\S(?:[^*]*?\S)?)\*(?=[\s).,;:!?]|$)/g, '$1<em>$2</em>');
   }).join('');
@@ -384,14 +415,21 @@ export function renderPage(md, mermaidJs, { expectMode } = {}) {
   if (doc.errors.length) throw new Error(`not a valid as-built document:\n${doc.errors.map((e) => `  - ${e}`).join('\n')}`);
   const head = doc.blocks.slice(1).findIndex((b) => b.type === 'heading' && b.level === 2) + 1;
   const facts = doc.blocks.slice(1, head).filter((b) => b.type === 'list').flatMap((b) => b.items);
+  const notes = doc.blocks.slice(1, head).filter((b) => b.type === 'para');
   const { html, toc } = bodyHtml([doc.blocks[0], ...doc.blocks.slice(head)]);
   const nav = doc.mode === 'full'
     ? `<nav aria-label="Contents"><h2>Contents</h2><ol>${toc.map((t) => `<li><a href="#${t.id}">${esc(t.text)}</a></li>`).join('')}</ol></nav>`
     : '';
+  // The page may run its own two scripts and nothing else, and may fetch
+  // nothing at all: whatever a diagram or a link holds, the browser refuses it.
+  const scripts = [inlineScript(mermaidJs), DRAW_JS];
+  const allow = scripts.map((js) => `'sha256-${createHash('sha256').update(js).digest('base64')}'`).join(' ');
+  const csp = `default-src 'none'; script-src ${allow}; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="${csp}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="as-built-source" content="${sourceHash(md)}">
 <meta name="as-built-mode" content="${doc.mode}">
@@ -402,14 +440,15 @@ export function renderPage(md, mermaidJs, { expectMode } = {}) {
 <header class="facts">
 <h1>${inline(doc.title)}</h1>
 <ul>${facts.map((f) => `<li>${inline(f.text)}</li>`).join('')}</ul>
+${notes.map((n) => `<p>${inline(n.text)}</p>`).join('\n')}
 </header>
 ${nav}
 <main>
 ${html}
 </main>
-<footer>Built from AS-BUILT.md by the prove-it kit. Every box in a diagram is listed in the table under it, with where it comes from. Diagrams are drawn in this page by Mermaid (MIT licence); nothing is fetched.</footer>
-<script>${inlineScript(mermaidJs)}</script>
-<script>${DRAW_JS}</script>
+<footer>Built from AS-BUILT.md by the prove-it kit. The table under each diagram says where its boxes come from: check them before you rely on the picture. Diagrams are drawn in this page by Mermaid (MIT licence), and the page's security policy lets it fetch nothing.</footer>
+<script>${scripts[0]}</script>
+<script>${scripts[1]}</script>
 </body>
 </html>
 `;
@@ -437,7 +476,7 @@ export function findBrowser(env = process.env, platform = process.platform) {
 // the file is complete: some builds of Chrome print the page and then never
 // exit, and a pipe would be held open by their helper processes.
 export async function drawCheck(pagePath, browser = findBrowser(), { waitMs = 60000 } = {}) {
-  if (!browser) return { checked: false, failed: [] };
+  if (!browser) return { checked: false, failed: [], reason: 'no Chrome, Edge or Chromium found' };
   const work = mkdtempSync(join(tmpdir(), 'as-built-browser-'));
   const domPath = join(work, 'dom.html');
   const fd = openSync(domPath, 'w');
@@ -446,7 +485,8 @@ export async function drawCheck(pagePath, browser = findBrowser(), { waitMs = 60
     const args = ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--disable-extensions',
       `--user-data-dir=${join(work, 'profile')}`, '--virtual-time-budget=20000', '--dump-dom', pathToFileURL(pagePath).href];
     if (process.env.CI) args.unshift('--no-sandbox');
-    child = spawn(browser, args, { stdio: ['ignore', fd, 'ignore'] });
+    // Its own process group, so the browser's helpers are stopped with it.
+    child = spawn(browser, args, { stdio: ['ignore', fd, 'ignore'], detached: process.platform !== 'win32' });
     let exited = false;
     child.on('exit', () => { exited = true; });
     child.on('error', () => { exited = true; });
@@ -459,15 +499,17 @@ export async function drawCheck(pagePath, browser = findBrowser(), { waitMs = 60
       await new Promise((r) => setTimeout(r, 200));
     }
     if (!complete(dom)) dom = read();
-    if (!complete(dom) || !/<html[^>]*data-diagrams="done"/.test(dom)) return { checked: false, failed: [] };
+    if (!complete(dom)) return { checked: false, failed: [], reason: exited ? 'the browser could not be run' : `the browser gave no page in ${Math.round(waitMs / 1000)} seconds` };
+    if (!/<html[^>]*data-diagrams="done"/.test(dom)) return { checked: false, failed: [], reason: 'the page did not finish drawing in the browser' };
     const failed = [];
     for (const m of dom.matchAll(/<figure class="diagram" data-line="(\d+)" data-drawn="(\w+)">[\s\S]*?<p class="draw-error"[^>]*>([\s\S]*?)<\/p>/g)) {
       if (m[2] !== 'yes') failed.push({ line: Number(m[1]), message: m[3].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&') });
     }
     return { checked: true, failed };
   } catch {
-    return { checked: false, failed: [] };
+    return { checked: false, failed: [], reason: 'the browser could not be run' };
   } finally {
+    try { if (process.platform !== 'win32' && child?.pid) process.kill(-child.pid, 'SIGKILL'); } catch { /* already gone */ }
     try { child?.kill('SIGKILL'); } catch { /* already gone */ }
     try { closeSync(fd); } catch { /* already closed */ }
     try { rmSync(work, { recursive: true, force: true, maxRetries: 3 }); } catch { /* a locked profile folder is not our failure */ }
@@ -486,8 +528,13 @@ export async function main(argv) {
   const flags = new Set(argv.filter((a) => a.startsWith('--')));
   const modeAt = argv.indexOf('--mode');
   const expectMode = modeAt === -1 ? undefined : argv[modeAt + 1];
-  const file = argv.find((a, k) => !a.startsWith('--') && (modeAt === -1 || k !== modeAt + 1));
-  if (!file || (modeAt !== -1 && !['light', 'full'].includes(expectMode))) { console.error(USAGE); return 2; }
+  const files = argv.filter((a, k) => !a.startsWith('--') && (modeAt === -1 || k !== modeAt + 1));
+  const file = files[0];
+  const unknown = [...flags].filter((f) => !['--mode', '--check', '--no-draw-check'].includes(f));
+  if (files.length !== 1 || unknown.length || (modeAt !== -1 && !['light', 'full'].includes(expectMode))) {
+    if (unknown.length) console.error(`unknown option: ${unknown.join(', ')}`);
+    console.error(USAGE); return 2;
+  }
   if (!existsSync(file)) { console.error(`no such file: ${file}\n${USAGE}`); return 2; }
   const md = readFileSync(file, 'utf8');
   const pagePath = join(dirname(file), `${basename(file).replace(/\.md$/i, '')}.html`);
@@ -512,7 +559,7 @@ export async function main(argv) {
   console.log(`wrote ${pagePath}`);
   if (flags.has('--no-draw-check')) { console.log('drawing not checked (--no-draw-check)'); return 0; }
   const drawn = await drawCheck(pagePath);
-  if (!drawn.checked) { console.log('drawing not checked: no Chrome, Edge or Chromium could be run. Open the page and look at each diagram.'); return 0; }
+  if (!drawn.checked) { console.log(`drawing not checked: ${drawn.reason}. Open the page and look at each diagram.`); return 0; }
   if (drawn.failed.length) {
     rmSync(pagePath, { force: true });
     console.error(`${drawn.failed.length} diagram${drawn.failed.length === 1 ? '' : 's'} did not draw, so the page was removed:\n${drawn.failed.map((f) => `  - line ${f.line}: diagram did not draw: ${f.message}`).join('\n')}`);

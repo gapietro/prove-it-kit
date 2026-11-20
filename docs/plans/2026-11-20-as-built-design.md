@@ -59,6 +59,14 @@ column. A section with nothing to show says "None in this app."
   drawing was not checked. The browser's output goes to a file and the
   browser is stopped once the file is complete: on macOS, Chrome printed the
   page and then never exited.
+- The page is hardened against its own input, which a model writes from
+  an app's source: all text is escaped; a link is kept only if it is a plain
+  relative path (an allowlist: browsers accept too many spellings of a URL
+  for a blocklist); a diagram may hold no directive, URL, `url(` or `<`; and
+  a Content-Security-Policy allows the page's two scripts by hash and no
+  fetch. A code review reproduced a fetch through a Mermaid theme directive
+  and a `javascript:` link before these were added. One test builds a page
+  past the checker and proves the policy alone stops the fetch.
 - `--check` compares a hash of the document, kept in the page, with the
   document as it stands. Modification times would break on a fresh clone.
 

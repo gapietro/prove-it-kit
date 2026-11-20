@@ -43,8 +43,9 @@ of an earlier app.
 ## The two documents
 
 Both are `docs/AS-BUILT.md`, with the page `docs/AS-BUILT.html` built from
-it. A full run replaces a light one. The headings are fixed, word for word,
-and the builder refuses any other.
+it. A full run replaces a light one. The sections are fixed, word for word,
+and the builder refuses any other section, and any other subsection of The
+agent or Data flows. Inside a subsection, use `####` headings freely.
 
 **Light** has four sections, in this order, and exactly two diagrams:
 
@@ -132,7 +133,17 @@ The template says what goes in each. A section with nothing to show says
    - Under the title: `- Mode:` light or full; `- Read at:` the commit
      (`git rev-parse --short HEAD`) and today's date; `- Instance:` the alias
      and release, or "not read". Never the host.
+   - **What the builder reads.** Headings, paragraphs, lists, tables, code
+     blocks and relative links such as `[RUNBOOK.md](../RUNBOOK.md)`. It
+     refuses everything else, with the line: raw HTML, images, horizontal
+     rules, any link that isn't a plain relative path, a code block inside a
+     list. Put a name in angle brackets, such as `<alias>`, in backticks.
+     Write `\|` for a `|` inside a table cell. Under the three fact lines
+     you may add one short note in plain sentences, and nothing else. Each
+     diagram's sources table comes straight after it, with nothing between.
    - **Diagrams.** Only `flowchart`, `sequenceDiagram` and `stateDiagram-v2`.
+     A diagram can't hold a `%%{` directive, a URL, `url(` or a `<`: the
+     builder refuses them, so that a page can never fetch or run anything.
      Give every flowchart node a short id of letters and digits, and its
      label in quotes: `tool1["Tool: apply_route"]`, a table as
      `log[("x_app_run_log")]`, a person as `u(["HR fulfiller"])`. No HTML and
@@ -220,7 +231,8 @@ The template says what goes in each. A section with nothing to show says
 - `docs/AS-BUILT.md`: the document, light or full, with fixed headings.
 - `docs/AS-BUILT.html`: the page built from it. It holds its own diagram
   library and fetches nothing, so it opens offline and can be sent on its
-  own. It is always built by `build-page.mjs`, never written by hand.
+  own. Its security policy lets it run only its own two scripts. It is
+  always built by `build-page.mjs`, never written by hand.
 - To check both later:
   `node ${CLAUDE_PLUGIN_ROOT}/skills/as-built/build-page.mjs docs/AS-BUILT.md --check`
   passes only when the document has its shape and the page was built from

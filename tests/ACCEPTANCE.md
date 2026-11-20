@@ -57,6 +57,13 @@ final text. Harness: `claude -p` 2.1.326 with `--plugin-dir <kit>`, `--setting-s
 and `--allowedTools` Read, Glob, Grep, Write, Edit, `Bash(now-sdk query:*)`, `Bash(git rev-parse:*)`, `Bash(node:*)`,
 `Bash(ls:*)`, `Bash(mkdir:*)`. Raw transcripts and documents are in `proof/raw/` in the scratch workspace, not in
 this repo. **Not run:** an interactive session, auto mode, Windows, and an app with no AI in it.
+A code review then reproduced two holes in the page builder: a diagram directive, image shape or HTML label made the
+page fetch from any server, and some link spellings, `javascript:` among them, passed the link check. Both are closed
+(a Content-Security-Policy, an allowlist for links, and checks inside diagrams), with the review's other findings. The
+four documents from the runs above were rebuilt with the stricter builder: all four pass, and all 16 diagrams draw
+under the policy. The skill's text gained the builder's rules, and a fifth run (light, 4 min 5 s) used the final skill
+and builder: built on the first try, both diagrams drew under the policy, `--check` passes, 16 `now-sdk query` calls
+and no other instance call (`05-light.transcript.jsonl`).
 
 How it was run: headless `claude -p` 2.1.280 with `--plugin-dir <kit>`,
 `--setting-sources project`, `--strict-mcp-config`, auto-memory off, a narrow
@@ -222,7 +229,7 @@ For D8: build, test and lint verdicts come from exit status per the verdict rule
 | 2026-11-20 | 0.2.0 (unreleased) | G2 | Pass | Run 3, `/prove-it:as-built full <alias>`: 7 min 1 s. "AS-BUILT.md: full, 10 diagrams; page is current". The agent: the workflow, no trigger (0 trigger rows on the instance), the run-as account, the instructions quoted with file and lines, three tools with reads, writes and refusals, 14 guardrail rows, and what reaches the model by field name. Data flows: one record's path, six other paths, a table matrix of nine tables, a state diagram, the cross-scope rows. `03-full.AS-BUILT.md` |
 | 2026-11-20 | 0.2.0 (unreleased) | G3 | Pass | Across the four transcripts, every instance call is `now-sdk query` (14, 20, 23 and 18 calls). No other `now-sdk` command, no `git` write. After each run `git status --short` shows only `?? docs/AS-BUILT.html` and `?? docs/AS-BUILT.md` |
 | 2026-11-20 | 0.2.0 (unreleased) | G4 | Pass | The builder's draw check ran in headless Chrome in every run and reported no failure: 2, 2, 10 and 2 diagrams. In run 4 the builder ran twice: the skill corrected the document after the first build's report |
-| 2026-11-20 | 0.2.0 (unreleased) | G5 | Pass | `grep -c -i service-now` on the documents and the full page: 0. Each names the alias only |
+| 2026-11-20 | 0.2.0 (unreleased) | G5 | Pass | `grep -c -i service-now` on the documents and the full page: 0. Each names the alias only. The stricter builder (a host under bold or code marks, or on the government-cloud domain) also accepts all four documents |
 | 2026-11-20 | 0.2.0 (unreleased) | G6 | Pass | Light: 5 rows and "a full run would list 1 more". Full: 14 rows. The first in both: the design's transfer to a new service (C111 to C118) against a branch that moves nothing, with its file and line. The full run also found a tool returning text to the agent that two terms say it must not see. `docs/DESIGN-*.md` and `src/` unchanged (G3's status) |
 | 2026-11-20 | 0.2.0 (unreleased) | G7 | Pass | Reads in each transcript: the template, `now.config.json`, files under `src/`, `docs/DESIGN-<Feature>.md`, and in run 4 `.gitignore`. The repo also held `BACKLOG.md`, a session note, an LLD and a decisions file: none was read. The full run's `ls` named `RUNBOOK.md` and `HANDOFF.md` and read neither. Each run started with no `AS-BUILT.md` in `docs/`, so "never reads an earlier one" was not put to the test: **unverified for that part** |
 
@@ -245,8 +252,8 @@ For F2 and F4, Pass means the sabotaged suite failed, as it must.
 | 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | Rerun after the same change: `validatePlan` made to start with `return [];`: 40 tests, 26 pass, 14 fail. Restored with `git checkout -- skills/build-plan/file-plan.mjs`: 40 pass, 0 fail. |
 | 2026-09-23 | 0.1.0 (unreleased) | F3 | Pass | Rerun after opt-in `--reopen` was added: `node --test tests/*.test.mjs` on Node v26.5.0: 45 tests, 45 pass, 0 fail. |
 | 2026-09-23 | 0.1.0 (unreleased) | F4 | Pass | Rerun after the same change: `validatePlan` made to start with `return [];`: 45 tests, 31 pass, 14 fail. Second sabotage, the reopen call disabled (`if (false && reopen && …)`): 45 tests, 43 pass, 2 fail (the reopen test and the dry-run reopen test). Restored from a copy: 45 pass, 0 fail. |
-| 2026-11-20 | 0.2.0 (unreleased) | F3 | Pass | `node --test tests/*.test.mjs` on Node v26.5.0, with Chrome present: the page builder's 45 tests pass with the filer's, none skipped; `sh tests/guard.test.sh`: 19 passed, 0 failed. |
-| 2026-11-20 | 0.2.0 (unreleased) | F4 | Pass | `checkDocument` made to collect no errors: the page builder's 45 tests, 18 pass, 27 fail. Restored from a copy: 45 pass. |
+| 2026-11-20 | 0.2.0 (unreleased) | F3 | Pass | `node --test tests/*.test.mjs` on Node v26.5.0, with Chrome present: the page builder's 64 tests pass with the filer's 45, none skipped; `sh tests/guard.test.sh`: 19 passed, 0 failed. |
+| 2026-11-20 | 0.2.0 (unreleased) | F4 | Pass | `checkDocument` made to collect no errors, before the review's tests were added: the page builder's 45 tests, 18 pass, 27 fail. Second sabotage, the Content-Security-Policy line removed: 64 tests, 62 pass, 2 fail (the policy test, and the test that a page built past the checker fetches nothing). Restored from a copy: 64 pass. |
 
 ## templates
 

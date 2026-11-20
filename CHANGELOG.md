@@ -26,8 +26,11 @@ app's code and its instance (#21).
   table and record on the instance. What it couldn't confirm is listed under
   Not verified and never drawn as fact.
 - `skills/as-built/build-page.mjs`, with no dependencies: it checks the
-  document's fixed shape, refuses Markdown it doesn't know (raw HTML, images,
-  absolute links) and any instance hostname, with the line; writes the page;
+  document's fixed shape; refuses, with the line, raw HTML, images, rules,
+  any link that isn't a plain relative path, a diagram that holds a
+  directive, a URL or HTML, and any instance hostname, however it is
+  dressed up; writes the page, whose Content-Security-Policy allows its own
+  two scripts by hash and no fetch at all;
   and, where the computer has Chrome, Edge or Chromium, opens the page
   headless to check that every diagram draws. `--check` passes only when the
   page was built from the document as it stands.
