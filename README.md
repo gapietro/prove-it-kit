@@ -168,7 +168,7 @@ It is a seatbelt, not a vault: see Honest limits.
 
 ## Versions
 
-0.2.1 (public; tag `v0.2.1`). See [CHANGELOG.md](CHANGELOG.md). Record the versions you
+0.2.2 (public; tag `v0.2.2`). See [CHANGELOG.md](CHANGELOG.md). Record the versions you
 build or record with (Claude Code, model, Node, now-sdk, gh, gitleaks,
 prove-it) in the table in
 [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md#record-your-versions).

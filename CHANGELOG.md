@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.2 — 2026-11-20
 
 - `as-built`: an AI agent's and an agentic workflow's active state is read
   from where the platform keeps it, `sn_aia_agent_config` and
@@ -8,6 +8,12 @@
   `sn_aia_agent_tool_m2m`. Their own tables have no `active` column, so
   every run reported the state as unknown (#27). A field a query leaves out
   is now reported as "no such column", never as inactive.
+- Plugin and marketplace versions are 0.2.2.
+
+**To update an installed kit:** `/plugin marketplace update prove-it`, then
+`/plugin update prove-it@prove-it`, and restart Claude Code. If you installed
+from a pinned tag, add the marketplace again at the new tag:
+`/plugin marketplace add <owner>/prove-it-kit#v0.2.2`.
 
 ## 0.2.1 — 2026-11-20
 
